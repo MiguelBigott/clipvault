@@ -6,7 +6,7 @@ SetCompressor /SOLID lzma
 !include "LogicLib.nsh"
 
 !define APP "Omnissiah"
-!define VERSION "1.1.0"
+!define VERSION "1.2.0"
 !define REGAPP "Software\${APP}"
 !define UNINST "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP}"
 
@@ -16,8 +16,10 @@ OutFile "..\dist\Omnissiah-Setup-${VERSION}.exe"
 InstallDir "$PROGRAMFILES64\${APP}"
 InstallDirRegKey HKLM "${REGAPP}" "InstallDir"
 RequestExecutionLevel admin
+; Nítido con la escala de pantalla de Windows (125 %, 150 %...).
+ManifestDPIAware true
 BrandingText "${APP} ${VERSION}"
-VIProductVersion "1.1.0.0"
+VIProductVersion "1.2.0.0"
 VIAddVersionKey /LANG=1034 "ProductName" "${APP}"
 VIAddVersionKey /LANG=1034 "FileDescription" "Instalador de ${APP}"
 VIAddVersionKey /LANG=1034 "FileVersion" "${VERSION}"
@@ -27,13 +29,14 @@ VIAddVersionKey /LANG=1034 "LegalCopyright" "${APP}"
 !define MUI_ICON "app.ico"
 !define MUI_UNICON "app.ico"
 !define MUI_WELCOMEFINISHPAGE_BITMAP "lateral.bmp"
+!define MUI_WELCOMEFINISHPAGE_BITMAP_STRETCH AspectFitHeight
 !define MUI_UNWELCOMEFINISHPAGE_BITMAP "lateral.bmp"
+!define MUI_UNWELCOMEFINISHPAGE_BITMAP_STRETCH AspectFitHeight
 !define MUI_ABORTWARNING
 
 !define MUI_WELCOMEPAGE_TITLE "Instalar ${APP}"
-!define MUI_WELCOMEPAGE_TEXT "Descargador de video y audio.$\r$\n$\r$\nSe instala en Archivos de programa. Tus descargas se guardarán en Videos\Descargas Omnissiah (puedes cambiarlo desde la app).$\r$\n$\r$\nAlabado sea el Omnissiah."
+!define MUI_WELCOMEPAGE_TEXT "Descargador de video y audio.$\r$\n$\r$\nSe instala en C:\Program Files\Omnissiah con todo lo necesario para descargar. Tus descargas se guardarán en Videos\Descargas Omnissiah (puedes cambiarlo desde la app).$\r$\n$\r$\nAlabado sea el Omnissiah."
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 
 ; Casillas finales: abrir la app y crear el acceso directo del escritorio.
@@ -106,6 +109,13 @@ Section "Instalar"
 
   SetOutPath "$INSTDIR"
   File "..\dist\Omnissiah.exe"
+
+  ; Componentes de descarga (motor y FFmpeg). Los usuarios pueden modificarlos para
+  ; que la app actualice el motor sin pedir permisos de administrador.
+  SetOutPath "$INSTDIR\componentes"
+  File "..\dist\componentes\*.*"
+  nsExec::Exec 'icacls "$INSTDIR\componentes" /grant *S-1-5-32-545:(OI)(CI)M /T /Q'
+  SetOutPath "$INSTDIR"
   WriteUninstaller "$INSTDIR\Desinstalar.exe"
 
   CreateShortcut "$SMPROGRAMS\${APP}.lnk" "$INSTDIR\Omnissiah.exe"
@@ -130,6 +140,7 @@ Section "Uninstall"
   Sleep 400
   Delete "$INSTDIR\Omnissiah.exe"
   Delete "$INSTDIR\Desinstalar.exe"
+  RMDir /r "$INSTDIR\componentes"
   RMDir "$INSTDIR"
   Delete "$SMPROGRAMS\${APP}.lnk"
   DeleteRegKey HKLM "${UNINST}"

@@ -3,6 +3,21 @@
 Todas las versiones siguen [Versionado Semántico](https://semver.org/lang/es/). Cada una tiene su
 etiqueta `vX.Y.Z` y su página en [Releases](../../releases).
 
+## [1.2.0] - 2026-10-18
+
+### Cambiado
+- El instalador trae todo lo necesario para descargar: el motor de descarga, FFmpeg y Deno quedan en `C:\Program Files\Omnissiah\componentes`. Ya no hay que instalarlos desde la app.
+- La app solo usa esa carpeta: se quitó «Elegir carpeta» y el botón de instalar pasa a ser «Reparar componentes».
+- El instalador siempre instala en `C:\Program Files\Omnissiah` (sin página para elegir la carpeta).
+- El instalador se ve nítido con la escala de pantalla de Windows y su imagen lateral usa el logo nuevo en alta resolución.
+- Los iconos de 48 px o menos usan una versión simplificada del logo, en los tamaños exactos de Windows (16 a 48 px).
+
+### Corregido
+- Con Deno incluido, el motor de descarga deja de funcionar en el modo limitado sin JavaScript, que podía dejar fuera algunos formatos.
+
+### Pendiente
+- El icono de la ventana en la barra de tareas todavía se ve borroso ([#1](https://github.com/MiguelBigott/Omnissiah/issues/1)).
+
 ## [1.1.0] - 2026-10-18
 
 ### Cambiado
@@ -28,5 +43,6 @@ Primera versión.
 - Instalación automática de los componentes de descarga.
 - Instalador para Windows.
 
+[1.2.0]: https://github.com/MiguelBigott/Omnissiah/releases/tag/v1.2.0
 [1.1.0]: https://github.com/MiguelBigott/Omnissiah/releases/tag/v1.1.0
 [1.0.0]: https://github.com/MiguelBigott/Omnissiah/releases/tag/v1.0.0

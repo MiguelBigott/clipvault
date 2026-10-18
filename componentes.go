@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -53,48 +52,37 @@ func NuevosComponentes(a *App) *Componentes {
 	return c
 }
 
-func (c *Componentes) binPropio() string { return filepath.Join(c.app.dataDir, "bin") }
-
-// candidatos devuelve, en orden de preferencia, las carpetas donde buscar los programas.
-func (c *Componentes) candidatos() []string {
-	var dirs []string
-	if b := c.app.config().BinDir; b != "" {
-		dirs = append(dirs, b)
+// carpeta es donde viven los componentes: "componentes" junto al .exe de la app
+// (C:\Program Files\Omnissiah\componentes). El instalador los deja ahí.
+func (c *Componentes) carpeta() string {
+	ex, err := os.Executable()
+	if err != nil {
+		return filepath.Join(c.app.dataDir, "componentes")
 	}
-	if ex, err := os.Executable(); err == nil {
-		d := filepath.Dir(ex)
-		dirs = append(dirs, d, filepath.Join(d, "bin"))
-	}
-	dirs = append(dirs, c.binPropio())
-	if home, err := os.UserHomeDir(); err == nil {
-		dirs = append(dirs, filepath.Join(home, "Downloads", "yt-dlp_win"))
-	}
-	return dirs
+	return filepath.Join(filepath.Dir(ex), "componentes")
 }
 
-func buscar(nombre string, dirs []string) string {
-	for _, d := range dirs {
-		p := filepath.Join(d, exe(nombre))
-		if st, err := os.Stat(p); err == nil && !st.IsDir() {
-			return p
-		}
+// argsMotor indica al motor de descarga dónde está Deno (su motor de JavaScript),
+// que viene en la misma carpeta de componentes.
+func (c *Componentes) argsMotor() []string {
+	if d := buscar("deno", c.carpeta()); d != "" {
+		return []string{"--js-runtimes", "deno:" + d}
 	}
-	if p, err := exec.LookPath(exe(nombre)); err == nil {
+	return nil
+}
+
+func buscar(nombre, dir string) string {
+	p := filepath.Join(dir, exe(nombre))
+	if st, err := os.Stat(p); err == nil && !st.IsDir() {
 		return p
 	}
 	return ""
 }
 
 func (c *Componentes) Refrescar() {
-	dirs := c.candidatos()
-	y := buscar("yt-dlp", dirs)
-	// ffmpeg: primero junto a yt-dlp, luego el resto.
-	f := ""
-	if y != "" {
-		f = buscar("ffmpeg", append([]string{filepath.Dir(y)}, dirs...))
-	} else {
-		f = buscar("ffmpeg", dirs)
-	}
+	dir := c.carpeta()
+	y := buscar("yt-dlp", dir)
+	f := buscar("ffmpeg", dir)
 	ver := ""
 	if y != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -167,7 +155,8 @@ func (c *Componentes) VistaPrevia(ctx context.Context, url string) (Vista, error
 	}
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
-	cmd := comando(ctx, y, "-J", "--flat-playlist", "--no-warnings", "--", url)
+	args := append([]string{"-J", "--flat-playlist", "--no-warnings"}, c.argsMotor()...)
+	cmd := comando(ctx, y, append(args, "--", url)...)
 	var stderr strings.Builder
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()
@@ -264,7 +253,7 @@ func (c *Componentes) InstalarEnSegundoPlano() {
 }
 
 func (c *Componentes) instalar() error {
-	dir := c.binPropio()
+	dir := c.carpeta()
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
@@ -397,21 +386,9 @@ func (c *Componentes) ActualizarEnSegundoPlano() {
 			if err != nil {
 				// Algunas variantes de yt-dlp no se actualizan solas: bajamos el .exe oficial.
 				c.avance("Descargando la versión más reciente", 0)
-				dir := c.binPropio()
-				_ = os.MkdirAll(dir, 0o755)
-				err = descargarArchivo(urlYtdlp, filepath.Join(dir, "yt-dlp.exe"), func(p float64) {
+				err = descargarArchivo(urlYtdlp, y, func(p float64) {
 					c.avance("Descargando la versión más reciente", p)
 				})
-				if err == nil {
-					c.app.mu.Lock()
-					c.app.cfg.BinDir = ""
-					c.app.guardarConfig()
-					c.app.mu.Unlock()
-					// Preferimos la copia propia desde ahora.
-					c.mu.Lock()
-					c.ytdlp = ""
-					c.mu.Unlock()
-				}
 			}
 		}
 		c.Refrescar()

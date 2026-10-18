@@ -5,8 +5,8 @@
 
 1. Escribe build/logo.svg (la fuente vectorial).
 2. Lo renderiza con Microsoft Edge en modo headless.
-3. Produce build/icono512.png, web/icono.png, build/app.ico y build/logo.png
-   (este último sin fondo, para el README).
+3. Produce build/icono512.png, build/app.ico, web/icono.ico, build/logo.png
+   (sin fondo, para el README) y build/lateral.bmp (imagen lateral del instalador).
 Requiere Pillow (pip install pillow) y Microsoft Edge.
 """
 import math
@@ -103,13 +103,53 @@ TRIANGULO = [(TRI_X + TRI_R * math.cos(math.radians(a)), TRI_Y - TRI_R * math.si
 LENTES_ARO = "".join(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="14.5"/>' for x, y in TRIANGULO)
 LENTES = "".join(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="9.5"/>' for x, y in TRIANGULO)
 
+# En la versión chica las lentes son más grandes y están más separadas.
+TRIANGULO_CHICO = [(291 + 24 * math.cos(math.radians(a)), 268 - 24 * math.sin(math.radians(a)))
+                   for a in (90, 210, 330)]
+LENTES_ARO_CHICO = "".join(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="18"/>' for x, y in TRIANGULO_CHICO)
+LENTES_CHICO = "".join(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="12"/>' for x, y in TRIANGULO_CHICO)
+
+RESPIRADOR = """<rect x="164" y="352" width="184" height="64" rx="12" fill="#3f424c"/>
+    <rect x="166" y="344" width="26" height="74" rx="9" fill="url(#cilindro)"/>
+    <rect x="196" y="338" width="28" height="82" rx="9" fill="url(#cilindro)"/>
+    <rect x="288" y="338" width="28" height="82" rx="9" fill="url(#cilindro)"/>
+    <rect x="320" y="344" width="26" height="74" rx="9" fill="url(#cilindro)"/>
+    <rect x="226" y="324" width="60" height="96" rx="10" fill="#2c2e36"/>
+    <g fill="url(#costilla)">
+      <rect x="230" y="330" width="52" height="16" rx="7"/><rect x="230" y="350" width="52" height="16" rx="7"/>
+      <rect x="230" y="370" width="52" height="16" rx="7"/><rect x="230" y="390" width="52" height="16" rx="7"/>
+    </g>"""
+RESPIRADOR_CHICO = """<rect x="164" y="350" width="184" height="70" rx="14" fill="#3f424c"/>
+    <rect x="170" y="340" width="48" height="84" rx="14" fill="url(#cilindro)"/>
+    <rect x="294" y="340" width="48" height="84" rx="14" fill="url(#cilindro)"/>
+    <rect x="224" y="322" width="64" height="100" rx="12" fill="#2c2e36"/>
+    <g fill="url(#costilla)">
+      <rect x="230" y="330" width="52" height="22" rx="9"/><rect x="230" y="358" width="52" height="22" rx="9"/>
+      <rect x="230" y="386" width="52" height="22" rx="9"/>
+    </g>"""
+
 # La cabeza se dibuja a escala y se recorta con el círculo interior del engranaje.
 R_RECORTE = R_INTERIOR - 9
 CABEZA_ESCALA = 0.82
 CABEZA_ARRIBA = 122  # dónde queda la punta de la capucha (y=94 en el dibujo original)
 
 
-def svg(variante, fondo=True):
+# Versión simplificada para tamaños de 48 px o menos (barra de tareas, título de ventana):
+# engranaje de 8 dientes gruesos, disco y cabeza más grandes, sin piezas finas.
+R_DIENTE_CHICO, R_CUERPO_CHICO, R_INTERIOR_CHICO = 240, 206, 164
+RUEDA_CHICA = engranaje(CX, CY, 8, R_CUERPO_CHICO,
+                        ((0, R_CUERPO_CHICO), (0.13, R_DIENTE_CHICO), (0.40, R_DIENTE_CHICO), (0.53, R_CUERPO_CHICO)),
+                        arco=6)
+TAMANOS_CHICOS = (16, 20, 24, 30, 32, 36, 40, 48)
+
+
+def svg(variante, fondo=True, chico=False):
+    """Logo completo, o con `chico=True` la versión simplificada para iconos pequeños."""
+    detalle = not chico
+    rueda_d, r_interior = (RUEDA_CHICA, R_INTERIOR_CHICO) if chico else (RUEDA, R_INTERIOR)
+    r_recorte = r_interior - (14 if chico else 9)
+    escala, arriba = (0.96, 98) if chico else (CABEZA_ESCALA, CABEZA_ARRIBA)
+    sombra = '' if chico else 'filter="url(#sombra)"'
     if variante == "rojo":
         rueda = ('<stop offset="0" stop-color="#e0453a"/><stop offset=".5" stop-color="#b3161a"/>'
                  '<stop offset="1" stop-color="#6a0a0b"/>')
@@ -178,7 +218,7 @@ def svg(variante, fondo=True):
     <radialGradient id="bola" cx="38%" cy="35%" r="65%">
       <stop offset="0" stop-color="#b9bcc6"/><stop offset="1" stop-color="#3b3d46"/>
     </radialGradient>
-    <clipPath id="recorte-disco"><circle cx="{CX}" cy="{CY}" r="{R_RECORTE}"/></clipPath>
+    <clipPath id="recorte-disco"><circle cx="{CX}" cy="{CY}" r="{r_recorte}"/></clipPath>
     <clipPath id="recorte-capucha"><path d="{CAPUCHA}"/></clipPath>
     <filter id="sombra" x="-20%" y="-20%" width="140%" height="140%">
       <feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#0a0000" flood-opacity=".65"/>
@@ -188,21 +228,21 @@ def svg(variante, fondo=True):
   {'<rect width="512" height="512" rx="92" fill="url(#fondo)"/>' if fondo else ''}
 
   <!-- Engranaje -->
-  <path d="{RUEDA} {circulo(CX, CY, R_INTERIOR)}" fill="url(#rueda)" fill-rule="evenodd" filter="url(#sombra)"/>
-  <circle cx="{CX}" cy="{CY}" r="{R_INTERIOR}" fill="{disco}"/>
-  <circle cx="{CX}" cy="{CY}" r="{R_CUERPO - 6}" fill="none" stroke="{brillo_rueda}" stroke-width="2" opacity=".3"/>
+  <path d="{rueda_d} {circulo(CX, CY, r_interior)}" fill="url(#rueda)" fill-rule="evenodd" {sombra}/>
+  <circle cx="{CX}" cy="{CY}" r="{r_interior}" fill="{disco}"/>
+  {f'<circle cx="{CX}" cy="{CY}" r="{R_CUERPO - 6}" fill="none" stroke="{brillo_rueda}" stroke-width="2" opacity=".3"/>' if detalle else ''}
 
   <g clip-path="url(#recorte-disco)">
-  <g filter="url(#sombra)" transform="translate({CX} {CABEZA_ARRIBA}) scale({CABEZA_ESCALA}) translate({-CX} -94)">
+  <g {sombra} transform="translate({CX} {arriba}) scale({escala}) translate({-CX} -94)">
     <!-- Capucha -->
     <path d="{CAPUCHA}" fill="url(#tela)"/>
-    <path d="{CAPUCHA}" fill="url(#tela-lado)"/>
+    {f"""<path d="{CAPUCHA}" fill="url(#tela-lado)"/>
     <g clip-path="url(#recorte-capucha)" fill="none" stroke="#6e0a0d" stroke-width="4" stroke-linecap="round" opacity=".7">{PLIEGUES}</g>
-    <path d="{CAPUCHA}" fill="none" stroke="#2a0203" stroke-width="4"/>
+    <path d="{CAPUCHA}" fill="none" stroke="#2a0203" stroke-width="4"/>""" if detalle else ''}
     <path d="{ABERTURA}" fill="#0b0405"/>
-    <path d="{ABERTURA_BORDE}" fill="none" stroke="#f4f1ec" stroke-width="12"/>
-    <g fill="#f4f1ec">{dientes_ribete()}</g>
-
+    <path d="{ABERTURA_BORDE}" fill="none" stroke="#f4f1ec" stroke-width="{12 if detalle else 22}"/>
+    {f'<g fill="#f4f1ec">{dientes_ribete()}</g>' if detalle else ''}
+{f"""
     <!-- Óptico lateral -->
     <rect x="140" y="222" width="11" height="40" rx="3" fill="#3b3d46" transform="rotate(-20 145 222)"/>
     <path d="{engranaje(142, 206, 6, 26, ((0, 26), (0.5, 26)))}" fill="url(#metal)" stroke="#2b2d34" stroke-width="3"/>
@@ -215,40 +255,31 @@ def svg(variante, fondo=True):
       <rect x="345" y="122" width="14" height="6" rx="2" fill="#7d818d"/>
       <rect x="347" y="128" width="10" height="6" rx="2" fill="#c9ccd4"/>
     </g>
-    <circle cx="346" cy="152" r="15" fill="url(#bola)"/>
+    <circle cx="346" cy="152" r="15" fill="url(#bola)"/>""" if detalle else ''}
 
     <!-- Rostro -->
     <path d="{ROSTRO}" fill="url(#mascara)"/>
     <path d="M 212 184 L 300 184 L 294 214 L 256 242 L 218 214 Z" fill="#2c2e36"/>
-    <rect x="240" y="182" width="32" height="15" rx="4" fill="#757985"/>
+    {'<rect x="240" y="182" width="32" height="15" rx="4" fill="#757985"/>' if detalle else ''}
     <!-- Ojo grande -->
-    <circle cx="222" cy="264" r="46" fill="url(#halo-azul)"/>
-    <circle cx="222" cy="264" r="33" fill="#2a2c33"/>
-    <circle cx="222" cy="264" r="26" fill="url(#lente)"/>
+    {'<circle cx="222" cy="264" r="46" fill="url(#halo-azul)"/>' if detalle else ''}
+    <circle cx="222" cy="264" r="{33 if detalle else 38}" fill="#2a2c33"/>
+    <circle cx="222" cy="264" r="{26 if detalle else 31}" fill="url(#lente)"/>
     <!-- Lentes pequeñas -->
-    <g fill="#2a2c33">{LENTES_ARO}</g>
-    <g fill="url(#lente)">{LENTES}</g>
-
+    <g fill="#2a2c33">{LENTES_ARO if detalle else LENTES_ARO_CHICO}</g>
+    <g fill="url(#lente)">{LENTES if detalle else LENTES_CHICO}</g>
+{f"""
     <!-- Tubo -->
     <path d="M 372 214 C 418 228 422 318 348 380" fill="none" stroke="#3a3a1c" stroke-width="20" stroke-linecap="round"/>
     <path d="M 372 214 C 418 228 422 318 348 380" fill="none" stroke="url(#tubo)" stroke-width="15" stroke-linecap="round"/>
-    <path d="M 382 222 C 410 240 412 304 362 364" fill="none" stroke="#e6e5b0" stroke-width="3" opacity=".5" stroke-linecap="round"/>
+    <path d="M 382 222 C 410 240 412 304 362 364" fill="none" stroke="#e6e5b0" stroke-width="3" opacity=".5" stroke-linecap="round"/>""" if detalle else ''}
 
     <!-- Respirador -->
-    <rect x="164" y="352" width="184" height="64" rx="12" fill="#3f424c"/>
-    <rect x="166" y="344" width="26" height="74" rx="9" fill="url(#cilindro)"/>
-    <rect x="196" y="338" width="28" height="82" rx="9" fill="url(#cilindro)"/>
-    <rect x="288" y="338" width="28" height="82" rx="9" fill="url(#cilindro)"/>
-    <rect x="320" y="344" width="26" height="74" rx="9" fill="url(#cilindro)"/>
-    <rect x="226" y="324" width="60" height="96" rx="10" fill="#2c2e36"/>
-    <g fill="url(#costilla)">
-      <rect x="230" y="330" width="52" height="16" rx="7"/><rect x="230" y="350" width="52" height="16" rx="7"/>
-      <rect x="230" y="370" width="52" height="16" rx="7"/><rect x="230" y="390" width="52" height="16" rx="7"/>
-    </g>
+    {RESPIRADOR if detalle else RESPIRADOR_CHICO}
   </g>
   </g>
-  <circle cx="{CX}" cy="{CY}" r="{R_INTERIOR - 7}" fill="none" stroke="#c0161b" stroke-width="6" opacity="{aro}"/>
-  <circle cx="{CX}" cy="{CY}" r="{R_INTERIOR}" fill="none" stroke="#2a0203" stroke-width="5"/>
+  <circle cx="{CX}" cy="{CY}" r="{r_interior - 7}" fill="none" stroke="#c0161b" stroke-width="{6 if detalle else 12}" opacity="{aro}"/>
+  <circle cx="{CX}" cy="{CY}" r="{r_interior}" fill="none" stroke="#2a0203" stroke-width="{5 if detalle else 8}"/>
 </svg>
 '''
 
@@ -266,6 +297,32 @@ def renderizar(svg_path, png_path, lado):
                         f"--window-size={lado},{lado}", f"--screenshot={png_path}",
                         "file:///" + html.replace(os.sep, "/")],
                        check=True, capture_output=True, timeout=60)
+
+
+def generar_lateral(logo_png, destino):
+    """Imagen lateral del instalador al doble de su tamaño (164x314) para pantallas con escala."""
+    ancho, alto = 328, 628
+    fuente = os.path.join(RAIZ, "web", "fonts", "cinzel-latin-700-normal.woff2").replace(os.sep, "/")
+    with tempfile.TemporaryDirectory() as perfil:
+        html = os.path.join(perfil, "lateral.html")
+        png = os.path.join(perfil, "lateral.png")
+        with open(html, "w", encoding="utf-8") as f:
+            f.write(f'''<html><head><style>
+@font-face {{ font-family: Cinzel; src: url("file:///{fuente}") format("woff2"); font-weight: 700; }}
+html, body {{ margin: 0; width: {ancho}px; height: {alto}px; overflow: hidden; }}
+body {{ background: radial-gradient(ellipse 90% 60% at 50% 34%, #5a0b08 0%, #380505 55%, #1a0202 100%);
+       display: flex; flex-direction: column; align-items: center; font-family: Cinzel, serif; }}
+img {{ width: 248px; height: 248px; margin-top: 112px; }}
+h1 {{ margin: 34px 0 0; font-size: 38px; font-weight: 700; letter-spacing: 1px; color: #ebe0c8; }}
+p {{ margin: 14px 0 0; font-size: 15px; font-weight: 700; letter-spacing: 1px; color: #a39484; }}
+</style></head><body>
+<img src="file:///{logo_png.replace(os.sep, "/")}"><h1>Omnissiah</h1><p>Alabado sea el Omnissiah</p>
+</body></html>''')
+        subprocess.run([EDGE, "--headless", "--disable-gpu", "--hide-scrollbars", "--allow-file-access-from-files",
+                        f"--user-data-dir={perfil}", f"--window-size={ancho},{alto}", "--virtual-time-budget=3000",
+                        f"--screenshot={png}", "file:///" + html.replace(os.sep, "/")],
+                       check=True, capture_output=True, timeout=60)
+        Image.open(png).convert("RGB").save(destino, format="BMP")
 
 
 def vista(variante, destino):
@@ -292,13 +349,22 @@ def main():
         base = Image.open(grande).convert("RGBA")
         base.load()
 
-    base.resize((512, 512), Image.LANCZOS).save(os.path.join(BUILD, "icono512.png"))
-    base.resize((256, 256), Image.LANCZOS).save(os.path.join(RAIZ, "web", "icono.png"))
+        chico_svg = os.path.join(tmp, "logo-chico.svg")
+        with open(chico_svg, "w", encoding="utf-8") as f:
+            f.write(svg(VARIANTE, chico=True))
+        chico_png = os.path.join(tmp, "logo-chico1024.png")
+        renderizar(chico_svg, chico_png, 1024)
+        chico = Image.open(chico_png).convert("RGBA")
+        chico.load()
 
-    tam = [16, 24, 32, 48, 64, 128, 256]
-    cuadros = [base.resize((s, s), Image.LANCZOS) for s in tam]
-    cuadros[-1].save(os.path.join(BUILD, "app.ico"), format="ICO",
-                     sizes=[(s, s) for s in tam], append_images=cuadros[:-1])
+    base.resize((512, 512), Image.LANCZOS).save(os.path.join(BUILD, "icono512.png"))
+
+    # Iconos: versión simplificada en los tamaños chicos que usa Windows (barra de tareas a
+    # 100-200 % de escala) y el logo completo en los grandes.
+    tam = list(TAMANOS_CHICOS) + [64, 128, 256]
+    cuadros = [(chico if s in TAMANOS_CHICOS else base).resize((s, s), Image.LANCZOS) for s in tam]
+    for destino in (os.path.join(BUILD, "app.ico"), os.path.join(RAIZ, "web", "icono.ico")):
+        cuadros[-1].save(destino, format="ICO", sizes=[(s, s) for s in tam], append_images=cuadros[:-1])
 
     # Versión sin fondo para la cabecera del README
     with tempfile.TemporaryDirectory() as tmp:
@@ -307,7 +373,11 @@ def main():
             f.write(svg(VARIANTE, fondo=False))
         grande = os.path.join(tmp, "logo1024.png")
         renderizar(ruta, grande, 1024)
-        Image.open(grande).convert("RGBA").resize((256, 256), Image.LANCZOS).save(os.path.join(BUILD, "logo.png"))
+        sin_fondo = Image.open(grande).convert("RGBA")
+        sin_fondo.resize((256, 256), Image.LANCZOS).save(os.path.join(BUILD, "logo.png"))
+        lateral_logo = os.path.join(tmp, "logo-lateral.png")
+        sin_fondo.resize((496, 496), Image.LANCZOS).save(lateral_logo)
+        generar_lateral(lateral_logo, os.path.join(BUILD, "lateral.bmp"))
     print("logo generado:", svg_path)
 
 

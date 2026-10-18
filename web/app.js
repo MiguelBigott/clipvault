@@ -288,7 +288,7 @@ function pintarComponentes(c) {
     const faltan = [!c.ytdlp && "el motor de descarga", !c.ffmpeg && "FFmpeg"].filter(Boolean);
     const peso = c.ffmpeg ? "unos 20 MB" : "unos 100 MB";
     $("#faltan-texto").textContent =
-      `${faltan.length > 1 ? "Faltan" : "Falta"} ${faltan.join(" y ")} para descargar. Puedo bajarlo ahora (${peso}) o puedes elegir la carpeta donde ya lo tienes.`;
+      `${faltan.length > 1 ? "Faltan" : "Falta"} ${faltan.join(" y ")} para descargar. Usa «Reparar componentes» para volver a bajar ${faltan.length > 1 ? "los dos" : "lo que falta"} a la carpeta de Omnissiah (${peso}).`;
   }
   $("#motor-listo").hidden = !c.ytdlp || ocupado;
 
@@ -323,14 +323,6 @@ $("#btn-cambiar-carpeta").addEventListener("click", async (e) => {
 $("#btn-abrir-carpeta").addEventListener("click", () => api("/api/carpeta/abrir", {}));
 $("#btn-instalar").addEventListener("click", () => api("/api/componentes/instalar", {}).then(refrescar));
 $("#btn-actualizar").addEventListener("click", () => api("/api/componentes/actualizar", {}).then(refrescar));
-$("#btn-elegir-bin").addEventListener("click", async () => {
-  try {
-    await api("/api/componentes/elegir", {});
-    refrescar();
-  } catch (e) {
-    avisar(e.message, true);
-  }
-});
 
 /* ---------------- Ciclo ---------------- */
 

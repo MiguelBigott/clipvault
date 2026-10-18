@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-const Version = "1.1.0"
+const Version = "1.2.0"
 
 // Puerto fijo: sirve también para detectar si la app ya está abierta.
 const puerto = "127.0.0.1:47823"
@@ -39,7 +39,6 @@ type App struct {
 
 type Config struct {
 	Carpeta string `json:"carpeta"`
-	BinDir  string `json:"binDir"`
 	Calidad string `json:"calidad"`
 	Tipo    string `json:"tipo"`
 }
@@ -302,28 +301,6 @@ func (a *App) rutas(mux *http.ServeMux) {
 		_ = os.MkdirAll(c, 0o755)
 		abrirCarpeta(c)
 		responder(w, map[string]bool{"ok": true})
-	}))
-
-	mux.HandleFunc("/api/componentes/elegir", soloLocal(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			fallar(w, http.StatusMethodNotAllowed, "método no permitido")
-			return
-		}
-		elegida, err := elegirCarpeta("Elige la carpeta donde está el motor de descarga", a.config().BinDir)
-		if err != nil || elegida == "" {
-			responder(w, a.comp.Estado())
-			return
-		}
-		if _, err := os.Stat(filepath.Join(elegida, exe("yt-dlp"))); err != nil {
-			fallar(w, http.StatusUnprocessableEntity, "Esa carpeta no tiene el motor de descarga. Elige la carpeta donde está.")
-			return
-		}
-		a.mu.Lock()
-		a.cfg.BinDir = elegida
-		a.guardarConfig()
-		a.mu.Unlock()
-		a.comp.Refrescar()
-		responder(w, a.comp.Estado())
 	}))
 
 	mux.HandleFunc("/api/componentes/instalar", soloLocal(func(w http.ResponseWriter, r *http.Request) {

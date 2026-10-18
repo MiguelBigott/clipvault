@@ -198,6 +198,7 @@ func (q *Queue) descargar(it *Item) {
 	}
 
 	args := formato(it.Tipo, it.Calidad)
+	args = append(args, q.app.comp.argsMotor()...)
 	args = append(args,
 		"--embed-thumbnail", "--embed-metadata",
 		"--ffmpeg-location", filepath.Dir(ff),
