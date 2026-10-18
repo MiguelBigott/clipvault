@@ -347,6 +347,7 @@ function boton(texto, fn) {
 }
 
 const filas = new Map(); // id -> li
+const ETIQUETA_ESTADO = { cola: "en cola", descargando: "descargando", procesando: "procesando", listo: "lista", cancelado: "cancelada", error: "error" };
 
 function pintarCola(cola) {
   const lista = $("#lista");
@@ -371,6 +372,9 @@ function pintarCola(cola) {
     li.querySelector(".nombre").title = it.titulo || it.url;
     li.querySelector(".detalle").textContent = detalleItem(it);
     li.querySelector(".medidor span").style.width = `${Math.round((it.progreso || 0) * 100)}%`;
+    const est = li.querySelector(".est");
+    est.className = `est ${it.estado}`;
+    est.textContent = it.estado === "descargando" && it.progreso ? `${Math.floor(it.progreso * 100)} %` : ETIQUETA_ESTADO[it.estado] || "";
 
     const firma = `${it.estado}|${it.archivo ? 1 : 0}`;
     const acc = li.querySelector(".acciones");
@@ -391,6 +395,7 @@ function pintarCola(cola) {
     if (!vivos.has(id)) { li.remove(); filas.delete(id); }
   }
   $("#vacio").hidden = cola.length > 0;
+  $("#cuenta").textContent = cola.length ? `${cola.length} descarga${cola.length === 1 ? "" : "s"}` : "";
   $("#btn-limpiar").hidden = !cola.some((it) => ["listo", "error", "cancelado"].includes(it.estado));
   const pendientes = cola.filter((it) => ["cola", "descargando", "procesando"].includes(it.estado)).length;
   document.title = pendientes ? `Clipvault (${pendientes})` : "Clipvault";

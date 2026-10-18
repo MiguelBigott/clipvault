@@ -3,6 +3,14 @@
 Todas las versiones siguen [Versionado Semántico](https://semver.org/lang/es/). Cada una tiene su
 etiqueta `vX.Y.Z` y su página en [Releases](../../releases).
 
+## [1.1.0] - 2026-10-18
+
+### Cambiado
+- Logo nuevo, «Cofre», en el estilo del logo de Codex: un cofre de pergamino con correas y cerradura de oro, un ▶ en la cerradura y el marcapáginas rojo. Trae una versión reforzada para que se lea bien a 16 px.
+- Skin «Cofre», hermano de Codex: el mismo gris neutro, líneas visibles y etiquetas en minúsculas, con `~/clipvault_` en el encabezado y el rojo de Clipvault como acento.
+- Cada descarga de la bóveda muestra su estado en una etiqueta (lista, 64 %, en cola, error), y arriba se ve cuántas hay.
+- El detalle de cada descarga puede ocupar dos líneas, para que se lea completo el tramo del clip.
+
 ## [1.0.1] - 2026-10-18
 
 ### Corregido
@@ -24,5 +32,6 @@ parte de ese código.
 - Campo de enlace único: al pulsar Descargar el enlace pasa a la bóveda y el campo queda vacío para el siguiente.
 - Forma parte de la suite [Codex](https://github.com/MiguelBigott/codex), que puede instalarla, actualizarla y abrirla.
 
+[1.1.0]: https://github.com/MiguelBigott/clipvault/releases/tag/v1.1.0
 [1.0.1]: https://github.com/MiguelBigott/clipvault/releases/tag/v1.0.1
 [1.0.0]: https://github.com/MiguelBigott/clipvault/releases/tag/v1.0.0

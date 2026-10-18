@@ -6,7 +6,7 @@
 
 > Descargador de **video y audio** para Windows: pegas un enlace y obtienes el MP4 o el MP3 con su portada y metadatos, sin consola ni comandos.
 
-[![Versión](https://img.shields.io/badge/versión-v1.0.1-c8483a)](CHANGELOG.md)
+[![Versión](https://img.shields.io/badge/versión-v1.1.0-c8483a)](CHANGELOG.md)
 [![CI](https://github.com/MiguelBigott/clipvault/actions/workflows/ci.yml/badge.svg)](https://github.com/MiguelBigott/clipvault/actions/workflows/ci.yml)
 [![Go](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![Windows](https://img.shields.io/badge/Windows-10%20·%2011-0078D4)](#-instalación)
@@ -50,7 +50,7 @@
 |---|---|
 | Aplicación | [Go](https://go.dev): servidor local con la biblioteca estándar |
 | Ventana | [WebView2](https://developer.microsoft.com/microsoft-edge/webview2/) con [go-webview2](https://github.com/jchv/go-webview2) |
-| Interfaz | HTML, CSS y JavaScript embebidos (`go:embed`), skin «Copista» con Cormorant Garamond e Inter |
+| Interfaz | HTML, CSS y JavaScript embebidos (`go:embed`), skin «Cofre» con Inter y Space Mono |
 | Descargas | Motor de descarga de código abierto, [FFmpeg](https://ffmpeg.org) y [Deno](https://deno.com) |
 | Instalador | [NSIS](https://nsis.sourceforge.io) |
 | CI | GitHub Actions |
@@ -77,7 +77,7 @@ Genera `dist/Clipvault.exe`, `dist/componentes/` y `dist/Clipvault-Setup-<versi�
 los componentes de sus repositorios oficiales, los verifica con SHA-256 y los guarda en `build/componentes/`
 (fuera de git); para bajar versiones nuevas: `.\build\compilar.ps1 -ActualizarComponentes`.
 
-El logo (la plumilla del copista) se define en `build/generar_logo.py`, que escribe `web/logo.svg`,
+El logo «Cofre» (un cofre de pergamino con correas y cerradura de oro, en el estilo del logo de Codex) se define en `build/generar_logo.py`, que escribe `web/logo.svg`,
 `build/logo.png`, `build/app.ico` (con una versión reforzada para 16-32 px) y `build/lateral.bmp`:
 
 ```powershell
@@ -98,4 +98,4 @@ Para revisar la interfaz en un navegador, sin ventana, ejecuta la app con `CLIPV
 
 **Creado por Miguel Bigott.** Antes se llamaba Omnissiah (hasta la 1.2.0).
 
-Incluye [FFmpeg](https://ffmpeg.org) (GPL, licencia en `componentes/LICENSE-FFmpeg.txt`), [Deno](https://deno.com) (MIT) y las tipografías [Cormorant Garamond](https://fonts.google.com/specimen/Cormorant+Garamond) e [Inter](https://fonts.google.com/specimen/Inter) (SIL Open Font License, ver `web/fonts/`).
+Incluye [FFmpeg](https://ffmpeg.org) (GPL, licencia en `componentes/LICENSE-FFmpeg.txt`), [Deno](https://deno.com) (MIT) y las tipografías [Inter](https://fonts.google.com/specimen/Inter) y [Space Mono](https://fonts.google.com/specimen/Space+Mono) (SIL Open Font License, ver `web/fonts/`).

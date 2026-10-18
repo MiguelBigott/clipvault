@@ -1,5 +1,5 @@
-"""Logo de Clipvault: la plumilla del copista apuntando hacia abajo (como una flecha de
-descarga) sobre la línea roja de la rúbrica.
+"""Logo de Clipvault «Cofre», en el estilo del códice de Codex: un cofre de pergamino con
+correas y cerradura de oro, un ▶ de tinta en la cerradura y el marcapáginas rojo de la rúbrica.
 
     python build/generar_logo.py
 
@@ -24,28 +24,27 @@ TINTA, BORDE, PERGAMINO, ORO, RUBRICA = "#16120e", "#3a3128", "#ece2cf", "#c9a45
 
 
 def svg(chico=False):
-    """Logo en viewBox 512. `chico`: plumilla más grande y detalles más gruesos para 16-32 px."""
+    """Logo en viewBox 512. `chico`: cofre más grande y detalles más gruesos para 16-32 px."""
     if chico:
-        pluma = "M256 70 C318 70 366 116 366 180 L366 262 L256 430 L146 262 L146 180 C146 116 194 70 256 70 Z"
-        banda, grosor_banda = "M146 262 H366", 18
-        agujero, r_agujero = (256, 206), 34
-        ranura, grosor_ranura = "M256 240 V410", 20
-        linea, grosor_linea = "M170 466 H342", 30
+        cofre = '<rect x="78" y="118" width="356" height="270" rx="20" fill="{p}"/>'
+        tapa = '<path d="M78 200 H434" stroke="{t}" stroke-width="16"/>'
+        correas = '<path d="M152 118 V388 M360 118 V388" stroke="{o}" stroke-width="22"/>'
+        cerradura = '<rect x="206" y="160" width="100" height="100" rx="14" fill="{o}"/>'
+        play = '<path d="M240 184 L278 210 L240 236 Z" fill="{t}"/>'
+        marca = '<path d="M290 388 V462 L306 446 L322 462 V388 Z" fill="{r}"/>'
         borde = 0
     else:
-        pluma = "M256 92 C306 92 344 128 344 180 L344 246 L256 404 L168 246 L168 180 C168 128 206 92 256 92 Z"
-        banda, grosor_banda = "M168 246 H344", 12
-        agujero, r_agujero = (256, 214), 24
-        ranura, grosor_ranura = "M256 236 V390", 12
-        linea, grosor_linea = "M184 432 H328", 22
+        cofre = '<rect x="112" y="142" width="288" height="226" rx="16" fill="{p}"/>'
+        tapa = '<path d="M112 212 H400" stroke="{t}" stroke-width="10"/>'
+        correas = '<path d="M176 142 V368 M336 142 V368" stroke="{o}" stroke-width="14"/>'
+        cerradura = '<rect x="222" y="180" width="68" height="70" rx="10" fill="{o}"/>'
+        play = '<path d="M247 197 L272 215 L247 233 Z" fill="{t}"/>'
+        marca = '<path d="M296 368 V424 L306 414 L316 424 V368 Z" fill="{r}"/>'
         borde = 10
+    partes = "\n  ".join(x.format(p=PERGAMINO, t=TINTA, o=ORO, r=RUBRICA) for x in (cofre, tapa, correas, cerradura, play, marca))
     return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <rect x="8" y="8" width="496" height="496" rx="112" fill="{TINTA}" stroke="{BORDE}" stroke-width="{borde}"/>
-  <path d="{pluma}" fill="{PERGAMINO}"/>
-  <path d="{banda}" stroke="{ORO}" stroke-width="{grosor_banda}"/>
-  <circle cx="{agujero[0]}" cy="{agujero[1]}" r="{r_agujero}" fill="{TINTA}"/>
-  <path d="{ranura}" stroke="{TINTA}" stroke-width="{grosor_ranura}" stroke-linecap="round"/>
-  <path d="{linea}" stroke="{RUBRICA}" stroke-width="{grosor_linea}" stroke-linecap="round"/>
+  {partes}
 </svg>
 '''
 
@@ -75,16 +74,17 @@ def png_de_svg(texto_svg, lado, destino):
 
 
 def lateral(logo_png, destino):
-    fuente = os.path.join(RAIZ, "web", "fonts", "cormorant-garamond-latin-600-normal.woff2").replace(os.sep, "/")
+    fuente = os.path.join(RAIZ, "web", "fonts", "inter-latin-600-normal.woff2").replace(os.sep, "/")
     with tempfile.TemporaryDirectory() as tmp:
         png = os.path.join(tmp, "lateral.png")
         renderizar(f'''<html><head><style>
-@font-face {{ font-family: Serif; src: url("file:///{fuente}"); font-weight: 600; }}
+@font-face {{ font-family: Titulo; src: url("file:///{fuente}"); font-weight: 600; }}
 html, body {{ margin: 0; width: 328px; height: 628px; overflow: hidden; background: {TINTA}; }}
 body {{ display: flex; flex-direction: column; align-items: center; color: {PERGAMINO}; }}
 img {{ width: 200px; height: 200px; margin-top: 150px; }}
-h1 {{ margin: 30px 0 0; font-family: Serif; font-weight: 600; font-size: 48px; }}
-</style></head><body><img src="file:///{logo_png.replace(os.sep, "/")}"><h1>Clipvault</h1></body></html>''', 328, 628, png)
+h1 {{ margin: 30px 0 0; font-family: Titulo; font-weight: 600; font-size: 46px; letter-spacing: -.03em; }}
+h1 span {{ color: {RUBRICA}; }}
+</style></head><body><img src="file:///{logo_png.replace(os.sep, "/")}"><h1>Clip<span>vault</span></h1></body></html>''', 328, 628, png)
         Image.open(png).convert("RGB").save(destino, format="BMP")
 
 
