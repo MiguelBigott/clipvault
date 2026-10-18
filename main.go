@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -116,7 +117,8 @@ func (a *App) cargarConfig() {
 	if err == nil {
 		_ = json.Unmarshal(b, &a.cfg)
 	}
-	if a.cfg.Carpeta == "" {
+	// Vacía o con la ruta por defecto de la 1.0.0: pasamos a la nueva por defecto.
+	if a.cfg.Carpeta == "" || strings.EqualFold(filepath.Clean(a.cfg.Carpeta), carpetaDescargasAntigua()) {
 		a.cfg.Carpeta = carpetaDescargasPorDefecto()
 	}
 }
@@ -307,13 +309,13 @@ func (a *App) rutas(mux *http.ServeMux) {
 			fallar(w, http.StatusMethodNotAllowed, "método no permitido")
 			return
 		}
-		elegida, err := elegirCarpeta("Elige la carpeta donde está yt-dlp.exe", a.config().BinDir)
+		elegida, err := elegirCarpeta("Elige la carpeta donde está el motor de descarga", a.config().BinDir)
 		if err != nil || elegida == "" {
 			responder(w, a.comp.Estado())
 			return
 		}
 		if _, err := os.Stat(filepath.Join(elegida, exe("yt-dlp"))); err != nil {
-			fallar(w, http.StatusUnprocessableEntity, "Esa carpeta no tiene yt-dlp.exe. Elige la carpeta donde está.")
+			fallar(w, http.StatusUnprocessableEntity, "Esa carpeta no tiene el motor de descarga. Elige la carpeta donde está.")
 			return
 		}
 		a.mu.Lock()

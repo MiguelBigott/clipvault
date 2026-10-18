@@ -285,10 +285,10 @@ function pintarComponentes(c) {
   }
   $("#motor-faltan").hidden = c.listo || ocupado;
   if (!c.listo) {
-    const faltan = [!c.ytdlp && "yt-dlp", !c.ffmpeg && "ffmpeg"].filter(Boolean).join(" y ");
+    const faltan = [!c.ytdlp && "el motor de descarga", !c.ffmpeg && "FFmpeg"].filter(Boolean);
     const peso = c.ffmpeg ? "unos 20 MB" : "unos 100 MB";
     $("#faltan-texto").textContent =
-      `Falta ${faltan} para descargar. Puedo bajarlo ahora (${peso}) o puedes elegir la carpeta donde ya lo tienes.`;
+      `${faltan.length > 1 ? "Faltan" : "Falta"} ${faltan.join(" y ")} para descargar. Puedo bajarlo ahora (${peso}) o puedes elegir la carpeta donde ya lo tienes.`;
   }
   $("#motor-listo").hidden = !c.ytdlp || ocupado;
 

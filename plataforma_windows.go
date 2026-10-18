@@ -11,6 +11,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"unsafe"
 )
 
 const crearSinVentana = 0x08000000 // CREATE_NO_WINDOW
@@ -53,9 +54,40 @@ func carpetaDatos() string {
 	return filepath.Join(d, "Omnissiah")
 }
 
+const nombreCarpetaDescargas = "Descargas Omnissiah"
+
+// carpetaDescargasPorDefecto devuelve "Descargas Omnissiah" dentro de la carpeta
+// Videos del usuario (respeta si la movió a otro disco).
 func carpetaDescargasPorDefecto() string {
+	if v := carpetaVideos(); v != "" {
+		return filepath.Join(v, nombreCarpetaDescargas)
+	}
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, "Videos", nombreCarpetaDescargas)
+}
+
+// carpetaDescargasAntigua es la ruta por defecto de la versión 1.0.0.
+func carpetaDescargasAntigua() string {
 	home, _ := os.UserHomeDir()
 	return filepath.Join(home, "Downloads", "Omnissiah")
+}
+
+// FOLDERID_Videos {18989B1D-99B5-455B-841C-AB7C74E4DDFC}
+var folderIDVideos = syscall.GUID{Data1: 0x18989B1D, Data2: 0x99B5, Data3: 0x455B,
+	Data4: [8]byte{0x84, 0x1C, 0xAB, 0x7C, 0x74, 0xE4, 0xDD, 0xFC}}
+
+func carpetaVideos() string {
+	var p *uint16
+	r, _, _ := syscall.NewLazyDLL("shell32.dll").NewProc("SHGetKnownFolderPath").Call(
+		uintptr(unsafe.Pointer(&folderIDVideos)), 0, 0, uintptr(unsafe.Pointer(&p)))
+	if p == nil {
+		return ""
+	}
+	defer syscall.NewLazyDLL("ole32.dll").NewProc("CoTaskMemFree").Call(uintptr(unsafe.Pointer(p)))
+	if r != 0 {
+		return ""
+	}
+	return syscall.UTF16ToString(unsafe.Slice(p, 32768))
 }
 
 func navegadorApp() string {

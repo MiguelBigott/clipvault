@@ -163,7 +163,7 @@ type Vista struct {
 func (c *Componentes) VistaPrevia(ctx context.Context, url string) (Vista, error) {
 	y, _ := c.Rutas()
 	if y == "" {
-		return Vista{}, errors.New("Falta yt-dlp. Instálalo desde el panel de componentes.")
+		return Vista{}, errors.New("Falta el motor de descarga. Instálalo desde el panel de componentes.")
 	}
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
@@ -192,7 +192,7 @@ func (c *Componentes) VistaPrevia(ctx context.Context, url string) (Vista, error
 		Entries []json.RawMessage `json:"entries"`
 	}
 	if err := json.Unmarshal(out, &raw); err != nil {
-		return Vista{}, errors.New("yt-dlp devolvió una respuesta que no se pudo leer.")
+		return Vista{}, errors.New("El motor de descarga devolvió una respuesta que no se pudo leer.")
 	}
 	v := Vista{Titulo: raw.Title, Canal: raw.Channel, Duracion: raw.Duration, Miniatura: raw.Thumbnail, Altura: raw.Height}
 	if v.Canal == "" {
@@ -234,7 +234,7 @@ func mensajeYtdlp(stderr, porDefecto string) string {
 				return "El video no está disponible."
 			}
 			if strings.Contains(l, "Sign in to confirm") {
-				return "YouTube pide iniciar sesión para este video."
+				return "El sitio pide iniciar sesión para ver este video."
 			}
 			if len(l) > 220 {
 				l = l[:220] + "…"
@@ -270,11 +270,11 @@ func (c *Componentes) instalar() error {
 	}
 	y, f := c.Rutas()
 	if y == "" {
-		c.avance("Descargando yt-dlp", 0)
+		c.avance("Descargando el motor", 0)
 		if err := descargarArchivo(urlYtdlp, filepath.Join(dir, "yt-dlp.exe"), func(p float64) {
-			c.avance("Descargando yt-dlp", p)
+			c.avance("Descargando el motor", p)
 		}); err != nil {
-			return fmt.Errorf("yt-dlp: %w", err)
+			return fmt.Errorf("motor de descarga: %w", err)
 		}
 	}
 	if f == "" {
@@ -385,7 +385,7 @@ func (c *Componentes) ActualizarEnSegundoPlano() {
 		y, _ := c.Rutas()
 		var err error
 		if y == "" {
-			err = errors.New("falta yt-dlp")
+			err = errors.New("falta el motor de descarga")
 		} else {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 			var out strings.Builder
@@ -416,14 +416,14 @@ func (c *Componentes) ActualizarEnSegundoPlano() {
 		}
 		c.Refrescar()
 		if err != nil {
-			c.terminar("No se pudo actualizar yt-dlp: "+err.Error(), true)
+			c.terminar("No se pudo actualizar el motor: "+err.Error(), true)
 			return
 		}
 		despues := c.Estado().VersionYtdlp
 		if despues == antes {
-			c.terminar("yt-dlp ya estaba en la versión más reciente ("+despues+").", false)
+			c.terminar("El motor ya estaba en la versión más reciente ("+despues+").", false)
 		} else {
-			c.terminar("El espíritu-máquina ha sido renovado: yt-dlp "+despues+".", false)
+			c.terminar("El espíritu-máquina ha sido renovado (versión "+despues+").", false)
 		}
 	}()
 }

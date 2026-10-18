@@ -38,6 +38,11 @@ func carpetaDatos() string {
 
 func carpetaDescargasPorDefecto() string {
 	home, _ := os.UserHomeDir()
+	return filepath.Join(home, "Videos", "Descargas Omnissiah")
+}
+
+func carpetaDescargasAntigua() string {
+	home, _ := os.UserHomeDir()
 	return filepath.Join(home, "Downloads", "Omnissiah")
 }
 

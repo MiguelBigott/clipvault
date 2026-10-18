@@ -187,7 +187,7 @@ func (q *Queue) descargar(it *Item) {
 	y, ff := q.app.comp.Rutas()
 	if y == "" || ff == "" {
 		q.actualizar(it, func(i *Item) {
-			i.Estado, i.Error = "error", "Faltan componentes (yt-dlp o ffmpeg). Instálalos desde el panel izquierdo."
+			i.Estado, i.Error = "error", "Faltan componentes de descarga. Instálalos desde el panel izquierdo."
 		})
 		return
 	}
@@ -215,7 +215,7 @@ func (q *Queue) descargar(it *Item) {
 	stdout, _ := cmd.StdoutPipe()
 	stderr, _ := cmd.StderrPipe()
 	if err := cmd.Start(); err != nil {
-		q.actualizar(it, func(i *Item) { i.Estado, i.Error = "error", "No se pudo iniciar yt-dlp." })
+		q.actualizar(it, func(i *Item) { i.Estado, i.Error = "error", "No se pudo iniciar el motor de descarga." })
 		return
 	}
 	alCancelar(ctx, cmd)
@@ -248,7 +248,7 @@ func (q *Queue) descargar(it *Item) {
 	}
 	if err != nil {
 		it.Estado, it.Fase, it.Velocidad, it.Restante = "error", "", "", ""
-		it.Error = mensajeYtdlp(errTexto.String(), "La descarga falló. Revisa el enlace o actualiza yt-dlp.")
+		it.Error = mensajeYtdlp(errTexto.String(), "La descarga falló. Revisa el enlace o actualiza el motor.")
 		log.Println("descarga", it.URL, err, errTexto.String())
 		return
 	}
