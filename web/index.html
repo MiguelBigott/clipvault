@@ -43,6 +43,10 @@
         <label><input type="radio" name="tipo" value="video" checked><span>Video MP4</span></label>
         <label><input type="radio" name="tipo" value="audio"><span>Solo audio MP3</span></label>
       </div>
+      <button class="boton-clip" id="btn-clip" type="button" aria-pressed="false" aria-controls="clip-panel" disabled
+        title="Pega un enlace para elegir un tramo">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.12 15.88M14.47 14.48L20 20M8.12 8.12L12 12"/></svg>Clip
+      </button>
       <label class="calidad" id="calidad-caja">
         <span>Calidad</span>
         <select id="calidad">
@@ -53,6 +57,24 @@
           <option value="compat">Compatible con todo (H.264)</option>
         </select>
       </label>
+    </div>
+
+    <!-- Clip: tramo del video; la línea de tiempo usa la duración del video pegado -->
+    <div class="linea-tiempo" id="clip-panel" hidden>
+      <div class="lt-cabeza"><span>Arrastra los marcadores para elegir el tramo</span>
+        <button class="enlace" id="clip-quitar" type="button">Quitar clip</button></div>
+      <div class="pista-tiempo" id="clip-pista">
+        <div class="base"></div>
+        <div class="sel" id="clip-sel"></div>
+        <button class="asa" id="clip-asa-desde" type="button" role="slider" aria-label="Inicio del clip"></button>
+        <button class="asa" id="clip-asa-hasta" type="button" role="slider" aria-label="Fin del clip"></button>
+      </div>
+      <div class="marcas" id="clip-marcas"></div>
+      <div class="lt-campos">
+        <label>Desde <input id="clip-desde" type="text" inputmode="numeric" spellcheck="false" autocomplete="off"></label>
+        <label>Hasta <input id="clip-hasta" type="text" inputmode="numeric" spellcheck="false" autocomplete="off"></label>
+        <span class="dur" id="clip-dur"></span>
+      </div>
     </div>
 
     <p class="destino">Se guardará en <b id="ruta-destino" title="">…</b>

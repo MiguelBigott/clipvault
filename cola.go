@@ -31,6 +31,9 @@ type Item struct {
 	Error     string  `json:"error"`
 	Lista     int     `json:"lista"`
 	Indice    int     `json:"indice"`
+	// Clip: tramo en segundos; ClipHasta == 0 significa el video completo.
+	ClipDesde float64 `json:"clipDesde"`
+	ClipHasta float64 `json:"clipHasta"`
 
 	cancel context.CancelFunc
 }
@@ -49,10 +52,10 @@ func NuevaCola(a *App) *Queue {
 	return q
 }
 
-func (q *Queue) Agregar(url, tipo, calidad string, v Vista) {
+func (q *Queue) Agregar(url, tipo, calidad string, v Vista, desde, hasta float64) {
 	q.mu.Lock()
 	it := &Item{ID: q.next, URL: url, Tipo: tipo, Calidad: calidad, Estado: "cola",
-		Titulo: v.Titulo, Miniatura: v.Miniatura, Lista: v.Lista}
+		Titulo: v.Titulo, Miniatura: v.Miniatura, Lista: v.Lista, ClipDesde: desde, ClipHasta: hasta}
 	q.next++
 	q.items = append(q.items, it)
 	q.mu.Unlock()
@@ -199,10 +202,17 @@ func (q *Queue) descargar(it *Item) {
 
 	args := formato(it.Tipo, it.Calidad)
 	args = append(args, q.app.comp.argsMotor()...)
+	plantilla := "%(title)s.%(ext)s"
+	if it.ClipHasta > 0 {
+		// Solo el tramo elegido, cortado exacto en los tiempos (no en el fotograma clave más cercano).
+		args = append(args, "--download-sections", fmt.Sprintf("*%.3f-%.3f", it.ClipDesde, it.ClipHasta),
+			"--force-keyframes-at-cuts")
+		plantilla = fmt.Sprintf("%%(title)s (clip %s-%s).%%(ext)s", tiempoArchivo(it.ClipDesde), tiempoArchivo(it.ClipHasta))
+	}
 	args = append(args,
 		"--embed-thumbnail", "--embed-metadata",
 		"--ffmpeg-location", filepath.Dir(ff),
-		"-P", carpeta, "-o", "%(title)s.%(ext)s",
+		"-P", carpeta, "-o", plantilla,
 		"--newline", "--no-colors", "--windows-filenames",
 		"--progress-template", "download:"+marcaProgreso+"%(progress.status)s|%(progress.downloaded_bytes)s|%(progress.total_bytes)s|%(progress.total_bytes_estimate)s|%(progress.speed)s|%(progress.eta)s|%(info.vcodec)s|%(info.acodec)s|%(info.playlist_index)s|%(info.title)s",
 		"--", it.URL,
@@ -358,6 +368,15 @@ func (q *Queue) procesarProgreso(it *Item, datos string) {
 			i.Indice = idx
 		}
 	})
+}
+
+// tiempoArchivo escribe un tiempo apto para nombres de archivo: 12m00s, 1h02m15s.
+func tiempoArchivo(seg float64) string {
+	s := int(seg + .5)
+	if s >= 3600 {
+		return fmt.Sprintf("%dh%02dm%02ds", s/3600, s%3600/60, s%60)
+	}
+	return fmt.Sprintf("%dm%02ds", s/60, s%60)
 }
 
 func num(s string) float64 {

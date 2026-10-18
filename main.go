@@ -209,6 +209,11 @@ func (a *App) rutas(mux *http.ServeMux) {
 			Tipo    string           `json:"tipo"`
 			Calidad string           `json:"calidad"`
 			Vistas  map[string]Vista `json:"vistas"`
+			// Clip: tramo opcional en segundos (solo para un enlace que no sea una lista).
+			Clip *struct {
+				Desde float64 `json:"desde"`
+				Hasta float64 `json:"hasta"`
+			} `json:"clip"`
 		}
 		if err := leerJSON(r, &req); err != nil {
 			fallar(w, http.StatusBadRequest, err.Error())
@@ -216,6 +221,17 @@ func (a *App) rutas(mux *http.ServeMux) {
 		}
 		if req.Tipo != "audio" {
 			req.Tipo = "video"
+		}
+		var desde, hasta float64
+		if req.Clip != nil {
+			v := req.Vistas[firstURL(req.URLs)]
+			valido := len(req.URLs) == 1 && v.Lista == 0 && req.Clip.Desde >= 0 && req.Clip.Hasta-req.Clip.Desde >= 1 &&
+				(v.Duracion == 0 || req.Clip.Hasta <= v.Duracion+1)
+			if !valido {
+				fallar(w, http.StatusBadRequest, "El tramo del clip no es válido: revisa Desde y Hasta.")
+				return
+			}
+			desde, hasta = req.Clip.Desde, req.Clip.Hasta
 		}
 		a.mu.Lock()
 		a.cfg.Tipo, a.cfg.Calidad = req.Tipo, req.Calidad
@@ -227,7 +243,7 @@ func (a *App) rutas(mux *http.ServeMux) {
 				continue
 			}
 			v := req.Vistas[u]
-			a.queue.Agregar(u, req.Tipo, req.Calidad, v)
+			a.queue.Agregar(u, req.Tipo, req.Calidad, v, desde, hasta)
 			n++
 		}
 		responder(w, map[string]int{"agregados": n})
@@ -319,6 +335,13 @@ func (a *App) rutas(mux *http.ServeMux) {
 		a.comp.ActualizarEnSegundoPlano()
 		responder(w, a.comp.Estado())
 	}))
+}
+
+func firstURL(urls []string) string {
+	if len(urls) == 0 {
+		return ""
+	}
+	return urls[0]
 }
 
 func init() {

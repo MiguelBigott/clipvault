@@ -35,6 +35,8 @@
 ## ✨ Funciones
 
 - **Video o audio**: MP4 o solo MP3 a máxima calidad, con la portada y los metadatos incrustados en el archivo.
+- **Un enlace a la vez**: pegas el enlace, pulsas Descargar y el campo queda libre para el siguiente.
+- **Clip**: opcional y apagado por defecto. Al activarlo aparece una línea de tiempo con la duración del video pegado; arrastras los marcadores (o escribes Desde y Hasta) y se descarga solo ese tramo, cortado exacto.
 - **Calidad a elección**: máxima disponible, hasta 1080p, 720p o 480p, o **compatible con todo** (H.264).
 - **Vista previa**: al pegar un enlace muestra el título, la miniatura, el autor y la duración antes de descargar; en las listas de reproducción indica cuántos videos tiene.
 - **La bóveda**: cola de descargas con progreso, velocidad y tiempo restante; cancelar, reintentar y quitar las terminadas.

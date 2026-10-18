@@ -15,6 +15,8 @@ parte de ese código.
 - Se instala en `C:\Program Files\Clipvault` y guarda las descargas en `Videos\Clipvault`.
 
 ### Añadido
+- **Clip** (opcional, apagado por defecto): una línea de tiempo que se adapta a la duración del video pegado para descargar solo un tramo. Se eligen Desde y Hasta arrastrando los marcadores, con el teclado o escribiendo el tiempo (90, 1:30 o 1:02:15). El archivo se corta exacto y se llama «Título (clip 0m05s-0m12s)».
+- Campo de enlace único: al pulsar Descargar el enlace pasa a la bóveda y el campo queda vacío para el siguiente.
 - Forma parte de la suite [Codex](https://github.com/MiguelBigott/codex), que puede instalarla, actualizarla y abrirla.
 
 [1.0.0]: https://github.com/MiguelBigott/clipvault/releases/tag/v1.0.0

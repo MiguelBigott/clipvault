@@ -96,6 +96,7 @@ function pintarVistas() {
   const listos = urls.filter((u) => vistas.get(u)?.estado !== "error");
   const btn = $("#btn-agregar");
   btn.disabled = listos.length === 0;
+  actualizarClip();
 }
 
 async function consultar(url) {
@@ -188,7 +189,9 @@ async function agregar() {
   try {
     const r = await api("/api/agregar", {
       urls, tipo: tipoElegido(), calidad: $("#calidad").value, vistas: datosVistas,
+      clip: clip.activo ? { desde: clip.desde, hasta: clip.hasta } : null,
     });
+    clip.activo = false;
     $("#enlaces").value = "";
     pintarVistas();
     avisar("Añadido a la bóveda.");
@@ -200,6 +203,138 @@ async function agregar() {
 }
 $("#btn-agregar").addEventListener("click", agregar);
 
+/* ---------------- Clip: tramo del video ---------------- */
+
+// La línea de tiempo usa la duración del video pegado (de su vista previa).
+const clip = { url: "", dur: 0, desde: 0, hasta: 0, activo: false };
+
+function tiempo(seg) {
+  seg = Math.max(0, Math.round(seg));
+  const h = Math.floor(seg / 3600), m = Math.floor((seg % 3600) / 60), s = seg % 60;
+  const dd = (n) => String(n).padStart(2, "0");
+  return h ? `${h}:${dd(m)}:${dd(s)}` : `${m}:${dd(s)}`;
+}
+
+// Acepta 90, 1:30 o 1:02:15. Devuelve NaN si no es un tiempo.
+function leerTiempo(txt) {
+  const partes = txt.trim().split(":");
+  if (!partes.length || partes.length > 3 || partes.some((p) => !/^\d+$/.test(p))) return NaN;
+  return partes.reduce((total, p) => total * 60 + Number(p), 0);
+}
+
+function actualizarClip() {
+  const url = urlsDelTexto()[0] || "";
+  const v = vistas.get(url);
+  const dur = v?.estado === "ok" && !v.datos.lista ? Math.floor(v.datos.duracion || 0) : 0;
+  if (url !== clip.url || dur !== clip.dur) {
+    Object.assign(clip, { url, dur, desde: 0, hasta: dur, activo: false });
+  }
+  const btn = $("#btn-clip");
+  btn.disabled = dur < 2;
+  btn.title = dur >= 2 ? "Descargar solo un tramo del video"
+    : v?.datos?.lista ? "Las listas de reproducción se descargan completas"
+    : "Pega un enlace para elegir un tramo";
+  if (btn.disabled) clip.activo = false;
+  pintarClip();
+}
+
+function pintarClip() {
+  const activo = clip.activo && clip.dur > 0;
+  $("#btn-clip").setAttribute("aria-pressed", String(activo));
+  $("#clip-panel").hidden = !activo;
+  $("#btn-agregar").textContent = activo ? "Descargar clip" : "Descargar";
+  if (!activo) return;
+  const pct = (s) => `${(s / clip.dur) * 100}%`;
+  $("#clip-sel").style.left = pct(clip.desde);
+  $("#clip-sel").style.width = pct(clip.hasta - clip.desde);
+  for (const [id, valor, min, max] of [["#clip-asa-desde", clip.desde, 0, clip.hasta - 1], ["#clip-asa-hasta", clip.hasta, clip.desde + 1, clip.dur]]) {
+    const asa = $(id);
+    asa.style.left = pct(valor);
+    asa.setAttribute("aria-valuemin", min);
+    asa.setAttribute("aria-valuemax", max);
+    asa.setAttribute("aria-valuenow", Math.round(valor));
+    asa.setAttribute("aria-valuetext", tiempo(valor));
+  }
+  const marcas = $("#clip-marcas");
+  if (marcas.dataset.dur !== String(clip.dur)) {
+    marcas.dataset.dur = clip.dur;
+    marcas.replaceChildren(...[0, .25, .5, .75, 1].map((f) => {
+      const m = document.createElement("span");
+      m.style.left = `${f * 100}%`;
+      m.textContent = tiempo(clip.dur * f);
+      return m;
+    }));
+  }
+  for (const [id, valor] of [["#clip-desde", clip.desde], ["#clip-hasta", clip.hasta]]) {
+    if (document.activeElement !== $(id)) $(id).value = tiempo(valor);
+  }
+  $("#clip-dur").textContent = `${tiempo(clip.hasta - clip.desde)} seleccionados`;
+}
+
+function moverClip(cual, seg) {
+  seg = Math.round(seg);
+  if (cual === "desde") clip.desde = Math.min(Math.max(0, seg), clip.hasta - 1);
+  else clip.hasta = Math.max(Math.min(clip.dur, seg), clip.desde + 1);
+  pintarClip();
+}
+
+$("#btn-clip").addEventListener("click", () => {
+  clip.activo = !clip.activo;
+  pintarClip();
+});
+$("#clip-quitar").addEventListener("click", () => {
+  Object.assign(clip, { activo: false, desde: 0, hasta: clip.dur });
+  pintarClip();
+  $("#btn-clip").focus();
+});
+
+// Arrastrar los marcadores (o hacer clic en la barra para mover el más cercano)
+function segundosEn(ev) {
+  const r = $("#clip-pista").getBoundingClientRect();
+  return Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)) * clip.dur;
+}
+let arrastrando = null;
+$("#clip-pista").addEventListener("pointerdown", (ev) => {
+  if (ev.button !== 0) return;
+  const seg = segundosEn(ev);
+  arrastrando = ev.target.id === "clip-asa-desde" ? "desde" : ev.target.id === "clip-asa-hasta" ? "hasta"
+    : Math.abs(seg - clip.desde) <= Math.abs(seg - clip.hasta) ? "desde" : "hasta";
+  $("#clip-pista").setPointerCapture(ev.pointerId);
+  $(arrastrando === "desde" ? "#clip-asa-desde" : "#clip-asa-hasta").focus();
+  moverClip(arrastrando, seg);
+  ev.preventDefault();
+});
+$("#clip-pista").addEventListener("pointermove", (ev) => { if (arrastrando) moverClip(arrastrando, segundosEn(ev)); });
+const soltar = () => { arrastrando = null; };
+$("#clip-pista").addEventListener("pointerup", soltar);
+$("#clip-pista").addEventListener("pointercancel", soltar);
+
+// Teclado: flechas ±1 s, Shift ±10 s, RePág/AvPág ±1 min, Inicio/Fin
+for (const [id, cual] of [["#clip-asa-desde", "desde"], ["#clip-asa-hasta", "hasta"]]) {
+  $(id).addEventListener("keydown", (ev) => {
+    const paso = ev.shiftKey ? 10 : 1;
+    const actual = clip[cual];
+    const nuevo = { ArrowLeft: actual - paso, ArrowDown: actual - paso, ArrowRight: actual + paso, ArrowUp: actual + paso,
+      PageDown: actual - 60, PageUp: actual + 60, Home: 0, End: clip.dur }[ev.key];
+    if (nuevo === undefined) return;
+    ev.preventDefault();
+    moverClip(cual, nuevo);
+  });
+}
+
+// Campos Desde / Hasta
+for (const [id, cual] of [["#clip-desde", "desde"], ["#clip-hasta", "hasta"]]) {
+  const campo = $(id);
+  const aplicar = () => {
+    const seg = leerTiempo(campo.value);
+    if (Number.isNaN(seg)) avisar("Escribe el tiempo como 90, 1:30 o 1:02:15.", true);
+    else moverClip(cual, seg);
+    campo.value = tiempo(clip[cual]);
+  };
+  campo.addEventListener("change", aplicar);
+  campo.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); aplicar(); campo.blur(); } });
+}
+
 /* ---------------- Cola ---------------- */
 
 const etiquetaCalidad = {
@@ -207,6 +342,11 @@ const etiquetaCalidad = {
 };
 
 function detalleItem(it) {
+  const tramo = it.clipHasta ? `, clip de ${tiempo(it.clipDesde)} a ${tiempo(it.clipHasta)}` : "";
+  return detalleBase(it) + (["cola", "descargando", "listo"].includes(it.estado) ? tramo : "");
+}
+
+function detalleBase(it) {
   const tipo = it.tipo === "audio" ? "MP3" : `MP4 ${etiquetaCalidad[it.calidad] || ""}`.trim();
   switch (it.estado) {
     case "cola": return `${tipo}, en espera`;
