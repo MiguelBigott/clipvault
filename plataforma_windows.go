@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-	"time"
 	"unsafe"
 )
 
@@ -48,15 +47,15 @@ func alCancelar(ctx context.Context, cmd *exec.Cmd) {}
 
 func carpetaDatos() string {
 	if d := os.Getenv("LOCALAPPDATA"); d != "" {
-		return filepath.Join(d, "Omnissiah")
+		return filepath.Join(d, "Clipvault")
 	}
 	d, _ := os.UserConfigDir()
-	return filepath.Join(d, "Omnissiah")
+	return filepath.Join(d, "Clipvault")
 }
 
-const nombreCarpetaDescargas = "Descargas Omnissiah"
+const nombreCarpetaDescargas = "Clipvault"
 
-// carpetaDescargasPorDefecto devuelve "Descargas Omnissiah" dentro de la carpeta
+// carpetaDescargasPorDefecto devuelve "Clipvault" dentro de la carpeta
 // Videos del usuario (respeta si la movió a otro disco).
 func carpetaDescargasPorDefecto() string {
 	if v := carpetaVideos(); v != "" {
@@ -64,12 +63,6 @@ func carpetaDescargasPorDefecto() string {
 	}
 	home, _ := os.UserHomeDir()
 	return filepath.Join(home, "Videos", nombreCarpetaDescargas)
-}
-
-// carpetaDescargasAntigua es la ruta por defecto de la versión 1.0.0.
-func carpetaDescargasAntigua() string {
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, "Downloads", "Omnissiah")
 }
 
 // FOLDERID_Videos {18989B1D-99B5-455B-841C-AB7C74E4DDFC}
@@ -88,61 +81,6 @@ func carpetaVideos() string {
 		return ""
 	}
 	return syscall.UTF16ToString(unsafe.Slice(p, 32768))
-}
-
-func navegadorApp() string {
-	var rutas []string
-	for _, env := range []string{"ProgramFiles(x86)", "ProgramFiles", "LOCALAPPDATA"} {
-		base := os.Getenv(env)
-		if base == "" {
-			continue
-		}
-		rutas = append(rutas,
-			filepath.Join(base, "Microsoft", "Edge", "Application", "msedge.exe"),
-			filepath.Join(base, "Google", "Chrome", "Application", "chrome.exe"),
-			filepath.Join(base, "BraveSoftware", "Brave-Browser", "Application", "brave.exe"),
-		)
-	}
-	for _, r := range rutas {
-		if _, err := os.Stat(r); err == nil {
-			return r
-		}
-	}
-	return ""
-}
-
-// abrirVentana muestra la interfaz como una ventana de aplicación independiente.
-// Si esperar es true, regresa cuando el proceso de la ventana termina y devuelve
-// true; devuelve false si no pudo seguir el proceso de la ventana.
-func abrirVentana(url, dataDir string, esperar bool) bool {
-	nav := navegadorApp()
-	if nav == "" {
-		c := exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
-		_ = c.Start()
-		return false
-	}
-	perfil := filepath.Join(dataDir, "ventana")
-	cmd := exec.Command(nav,
-		"--app="+url,
-		"--user-data-dir="+perfil,
-		"--window-size=1180,820",
-		"--no-first-run", "--no-default-browser-check",
-		"--disable-features=Translate,msEdgeSidebarV2,msHubApps,msUndersideButton",
-		"--disable-sync", "--hide-crash-restore-bubble",
-		"--disable-background-timer-throttling", "--disable-renderer-backgrounding",
-		"--disable-backgrounding-occluded-windows",
-	)
-	if err := cmd.Start(); err != nil {
-		_ = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-		return false
-	}
-	if !esperar {
-		return false
-	}
-	t0 := time.Now()
-	_ = cmd.Wait()
-	// Si terminó enseguida, el navegador entregó la ventana a otro proceso.
-	return time.Since(t0) > 5*time.Second
 }
 
 func powershell(script string) (string, error) {

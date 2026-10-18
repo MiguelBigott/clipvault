@@ -82,7 +82,7 @@ const cuadros = c.dias.map((n, i) => {
 const y1 = PAD, y2 = y1 + 56 + GAP, y3 = y2 + 78 + GAP, H = y3 + 130 + PAD;
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
-<title>Actividad del repositorio Omnissiah (últimos ${N} días)</title>
+<title>Actividad del repositorio Clipvault (últimos ${N} días)</title>
 ${tarjeta(PAD, y1, W - 2 * PAD, 56, `<g transform="translate(14,18)" fill="${C.mechanicus}"><rect width="18" height="4" rx="1"/><rect y="7" width="18" height="4" rx="1"/><rect y="14" width="18" height="4" rx="1"/></g>
   <text x="42" y="34" fill="${C.mechanicus}" font-size="17" font-weight="600">${c.total} ${c.total === 1 ? "contribución" : "contribuciones"} en los últimos ${N} días</text>${cuadros}`)}
 ${resumen(PAD, y2, `Versión ${ultima}`, C.dorado, re.total, re.prev)}

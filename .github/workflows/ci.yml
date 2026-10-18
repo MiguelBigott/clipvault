@@ -1,6 +1,6 @@
 name: CI
 
-# Verifica que Omnissiah compile en Windows en cada push y Pull Request (no publica nada).
+# Verifica que Clipvault compile en Windows en cada push y Pull Request (no publica nada).
 on:
   push:
     branches: [main]
@@ -39,4 +39,4 @@ jobs:
         run: go vet ./...
 
       - name: Compilar
-        run: go build -trimpath -ldflags "-H windowsgui -s -w" -o dist/Omnissiah.exe .
+        run: go build -trimpath -ldflags "-H windowsgui -s -w" -o dist/Clipvault.exe .

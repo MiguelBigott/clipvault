@@ -3,94 +3,92 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Omnissiah</title>
-<link rel="icon" href="icono.ico" sizes="16x16 20x20 24x24 30x30 32x32 36x36 40x40 48x48 64x64 128x128 256x256">
+<title>Clipvault</title>
+<link rel="icon" href="logo.svg">
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
-<div class="app">
 
-  <aside class="altar">
-    <div class="reliquia" id="reliquia">
-      <img src="craneo.png" alt="" class="craneo" width="352" height="240">
-      <span class="ojo" aria-hidden="true"></span>
+<div class="redim redim-arriba" data-borde="arriba"></div>
+<div class="redim redim-arriba-izq" data-borde="arriba-izq"></div>
+<div class="redim redim-arriba-der" data-borde="arriba-der"></div>
+
+<header class="barra" id="barra">
+  <img class="barra-logo" src="logo.svg" alt="">
+  <span class="barra-nombre">Clipvault</span>
+  <span class="barra-espacio"></span>
+  <div class="controles" id="controles" hidden>
+    <button type="button" id="btn-min" aria-label="Minimizar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+    <button type="button" id="btn-max" aria-label="Maximizar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11"/></svg></button>
+    <button type="button" id="btn-cerrar" class="cerrar" aria-label="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
+  </div>
+</header>
+
+<div class="libro">
+  <!-- Página izquierda: el encargo -->
+  <section class="pagina izquierda" aria-labelledby="h-encargo">
+    <h1 id="h-encargo">Nueva descarga</h1>
+    <p class="intro"><span class="capitular" aria-hidden="true">P</span>ega el enlace del video. Clipvault lo guarda entero, con su portada y sus datos, en tu bóveda; al descargar, el campo queda libre para el siguiente.</p>
+
+    <div class="campo">
+      <input id="enlaces" type="url" spellcheck="false" autocomplete="off" aria-label="Enlace del video"
+        placeholder="https://…">
+      <button class="enlace" id="btn-pegar" type="button">Pegar</button>
     </div>
-    <h1 class="titulo">Alabado sea el Omnissiah</h1>
-    <p class="liturgia">El hierro no olvida. El dato no muere.</p>
 
-    <section class="panel" aria-labelledby="h-destino">
-      <h2 id="h-destino">Carpeta de destino</h2>
-      <p class="ruta" id="ruta-destino" title="">…</p>
-      <div class="botones">
-        <button class="btn" id="btn-cambiar-carpeta" type="button">Cambiar</button>
-        <button class="btn" id="btn-abrir-carpeta" type="button">Abrir carpeta</button>
-      </div>
-    </section>
+    <div class="vistas" id="vistas" aria-live="polite"></div>
 
-    <section class="panel" aria-labelledby="h-motor">
-      <h2 id="h-motor">Espíritu-máquina</h2>
-      <dl class="motor">
-        <div><dt>Motor de descarga</dt><dd id="ver-ytdlp">…</dd></div>
-        <div><dt>FFmpeg</dt><dd id="ver-ffmpeg">…</dd></div>
-      </dl>
-      <div class="tarea" id="tarea" hidden>
-        <p id="tarea-texto"></p>
-        <div class="medidor"><span id="tarea-barra"></span></div>
+    <div class="opciones">
+      <div class="eleccion" role="radiogroup" aria-label="Qué descargar">
+        <label><input type="radio" name="tipo" value="video" checked><span>Video MP4</span></label>
+        <label><input type="radio" name="tipo" value="audio"><span>Solo audio MP3</span></label>
       </div>
-      <div class="botones" id="motor-listo">
-        <button class="btn" id="btn-actualizar" type="button">Actualizar motor</button>
-      </div>
-      <div class="faltan" id="motor-faltan" hidden>
-        <p id="faltan-texto">Faltan componentes para descargar.</p>
-        <div class="botones">
-          <button class="btn btn-fuerte" id="btn-instalar" type="button">Reparar componentes</button>
-        </div>
-      </div>
-    </section>
+      <label class="calidad" id="calidad-caja">
+        <span>Calidad</span>
+        <select id="calidad">
+          <option value="max">Máxima disponible</option>
+          <option value="1080">Hasta 1080p</option>
+          <option value="720">Hasta 720p</option>
+          <option value="480">Hasta 480p</option>
+          <option value="compat">Compatible con todo (H.264)</option>
+        </select>
+      </label>
+    </div>
 
-    <p class="version" id="version"></p>
-  </aside>
+    <p class="destino">Se guardará en <b id="ruta-destino" title="">…</b>
+      <span class="destino-acciones">
+        <button class="enlace" id="btn-cambiar-carpeta" type="button">Cambiar</button>
+        <button class="enlace" id="btn-abrir-carpeta" type="button">Abrir carpeta</button>
+      </span>
+    </p>
 
-  <main class="obra">
-    <section class="entrada" aria-labelledby="h-enlaces">
-      <div class="cabecera">
-        <h2 id="h-enlaces">Enlaces</h2>
-        <button class="btn btn-chico" id="btn-pegar" type="button">Pegar</button>
-      </div>
-      <textarea id="enlaces" rows="3" spellcheck="false" autocomplete="off"
-        placeholder="Pega uno o varios enlaces, uno por línea"></textarea>
+    <button class="btn btn-fuerte" id="btn-agregar" type="button" disabled>Descargar</button>
+  </section>
 
-      <div class="vistas" id="vistas" aria-live="polite"></div>
+  <!-- Página derecha: la bóveda (cola de descargas) -->
+  <section class="pagina derecha" aria-labelledby="h-boveda">
+    <div class="cabecera">
+      <h1 id="h-boveda">En la bóveda</h1>
+      <button class="enlace" id="btn-limpiar" type="button" hidden>Quitar terminadas</button>
+    </div>
 
-      <div class="opciones">
-        <div class="selector" role="radiogroup" aria-label="Qué descargar">
-          <label><input type="radio" name="tipo" value="video" checked><span>Video MP4</span></label>
-          <label><input type="radio" name="tipo" value="audio"><span>Solo audio MP3</span></label>
-        </div>
-        <label class="calidad" id="calidad-caja">
-          <span>Calidad</span>
-          <select id="calidad">
-            <option value="max">Máxima disponible</option>
-            <option value="1080">Hasta 1080p</option>
-            <option value="720">Hasta 720p</option>
-            <option value="480">Hasta 480p</option>
-            <option value="compat">Compatible con todo (H.264)</option>
-          </select>
-        </label>
-        <button class="btn btn-fuerte btn-grande" id="btn-agregar" type="button" disabled>Descargar</button>
-      </div>
-    </section>
+    <div class="faltan" id="motor-faltan" hidden>
+      <p id="faltan-texto">Faltan componentes para descargar.</p>
+      <button class="btn btn-fuerte btn-chico" id="btn-instalar" type="button">Reparar componentes</button>
+    </div>
 
-    <section class="cola" aria-labelledby="h-cola">
-      <div class="cabecera">
-        <h2 id="h-cola">Cola de descargas</h2>
-        <button class="btn btn-chico" id="btn-limpiar" type="button" hidden>Quitar terminadas</button>
-      </div>
-      <ol class="lista" id="lista"></ol>
-      <p class="vacio" id="vacio">La cola está vacía. Pega un enlace arriba para empezar.</p>
-    </section>
-  </main>
+    <ol class="lista" id="lista"></ol>
+    <p class="vacio" id="vacio">La bóveda está vacía. Pega un enlace a la izquierda para empezar.</p>
+  </section>
 </div>
+
+<footer class="pie">
+  <span class="motor">Motor de descarga <span id="ver-ytdlp">…</span> · FFmpeg <span id="ver-ffmpeg">…</span></span>
+  <span id="motor-listo"><button class="enlace" id="btn-actualizar" type="button">Actualizar motor</button></span>
+  <span class="tarea" id="tarea" hidden><span id="tarea-texto"></span><span class="medidor"><span id="tarea-barra"></span></span></span>
+  <span class="pie-espacio"></span>
+  <span id="version"></span>
+</footer>
 
 <div class="aviso" id="aviso" role="status" hidden></div>
 

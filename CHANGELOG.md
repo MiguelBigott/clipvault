@@ -3,46 +3,18 @@
 Todas las versiones siguen [Versionado Semántico](https://semver.org/lang/es/). Cada una tiene su
 etiqueta `vX.Y.Z` y su página en [Releases](../../releases).
 
-## [1.2.0] - 2026-10-18
-
-### Cambiado
-- El instalador trae todo lo necesario para descargar: el motor de descarga, FFmpeg y Deno quedan en `C:\Program Files\Omnissiah\componentes`. Ya no hay que instalarlos desde la app.
-- La app solo usa esa carpeta: se quitó «Elegir carpeta» y el botón de instalar pasa a ser «Reparar componentes».
-- El instalador siempre instala en `C:\Program Files\Omnissiah` (sin página para elegir la carpeta).
-- El instalador se ve nítido con la escala de pantalla de Windows y su imagen lateral usa el logo nuevo en alta resolución.
-- Los iconos de 48 px o menos usan una versión simplificada del logo, en los tamaños exactos de Windows (16 a 48 px).
-
-### Corregido
-- Con Deno incluido, el motor de descarga deja de funcionar en el modo limitado sin JavaScript, que podía dejar fuera algunos formatos.
-
-### Pendiente
-- El icono de la ventana en la barra de tareas todavía se ve borroso ([#1](https://github.com/MiguelBigott/Omnissiah/issues/1)).
-
-## [1.1.0] - 2026-10-18
-
-### Cambiado
-- El instalador ahora instala en `C:\Program Files\Omnissiah` para todo el equipo (pide permisos de administrador). Al actualizar, quita la copia de la 1.0.0 en `%LOCALAPPDATA%\Programs` sin tocar la configuración ni los componentes.
-- Las descargas van por defecto a `Videos\Descargas Omnissiah`. Quien tenía la carpeta por defecto de la 1.0.0 (`Descargas\Omnissiah`) pasa a la nueva automáticamente.
-- Logo nuevo, vectorial: tecnosacerdote encapuchado dentro del engranaje del Mechanicus.
-
-### Añadido
-- Casilla al final del instalador para crear el acceso directo en el escritorio.
-- `build/compilar.ps1`: compila el `.exe` (con icono y datos de versión) y el instalador en un solo paso.
-- `build/generar_logo.py`: genera el logo y todos los iconos a partir de la fuente vectorial.
-- CI en GitHub Actions y panel de actividad en el README.
-
-### Quitado
-- La interfaz, los mensajes y el instalador ya no nombran el sitio ni la herramienta de descarga.
-
 ## [1.0.0] - 2026-10-18
 
-Primera versión.
+Primera versión como **Clipvault**. Antes la app se llamaba Omnissiah (hasta la 1.2.0); esta versión
+parte de ese código.
 
-- Descarga de video MP4 o solo audio MP3, con portada y metadatos.
-- Cola de descargas con vista previa, progreso, cancelar y reintentar.
-- Instalación automática de los componentes de descarga.
-- Instalador para Windows.
+### Cambiado
+- Nuevo nombre y nuevo logo: la plumilla del copista sobre la línea roja de la rúbrica.
+- Skin «Copista»: la app es un libro abierto, con la nueva descarga a la izquierda y la bóveda (la cola) a la derecha.
+- Ventana nativa de Windows (WebView2) en lugar de una ventana de Edge: el icono de la barra de tareas se ve nítido en cualquier escala.
+- Se instala en `C:\Program Files\Clipvault` y guarda las descargas en `Videos\Clipvault`.
 
-[1.2.0]: https://github.com/MiguelBigott/Omnissiah/releases/tag/v1.2.0
-[1.1.0]: https://github.com/MiguelBigott/Omnissiah/releases/tag/v1.1.0
-[1.0.0]: https://github.com/MiguelBigott/Omnissiah/releases/tag/v1.0.0
+### Añadido
+- Forma parte de la suite [Codex](https://github.com/MiguelBigott/codex), que puede instalarla, actualizarla y abrirla.
+
+[1.0.0]: https://github.com/MiguelBigott/clipvault/releases/tag/v1.0.0

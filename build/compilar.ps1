@@ -1,4 +1,4 @@
-# Compila Omnissiah.exe y el instalador en dist\.
+# Compila Clipvault.exe y el instalador en dist\.
 # Requiere: Go, NSIS (makensis) y go-winres (go install github.com/tc-hib/go-winres@latest).
 #
 # Los componentes de descarga se bajan de sus fuentes oficiales, se verifican con
@@ -17,7 +17,7 @@ if (-not $goExe) { $goExe = 'C:\Program Files\Go\bin\go.exe' }
 $winres = Join-Path (& $goExe env GOPATH) 'bin\go-winres.exe'
 $makensis = 'C:\Program Files (x86)\NSIS\makensis.exe'
 
-Write-Host "Omnissiah $version"
+Write-Host "Clipvault $version"
 
 # ---------- Componentes de descarga ----------
 $motorUrl = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download'
@@ -50,7 +50,7 @@ $faltan = @($necesarios | Where-Object { -not (Test-Path (Join-Path $cache $_)) 
 if (-not (Test-Path (Join-Path $cache 'avcodec-*.dll'))) { $faltan += 'DLL de FFmpeg' }
 if ($ActualizarComponentes -or $faltan) {
     Write-Host 'Descargando componentes de descarga...'
-    $tmp = Join-Path ([IO.Path]::GetTempPath()) "omnissiah-comp-$([guid]::NewGuid())"
+    $tmp = Join-Path ([IO.Path]::GetTempPath()) "clipvault-comp-$([guid]::NewGuid())"
     New-Item -ItemType Directory $tmp | Out-Null
     try {
         Get-Verificado "$motorUrl/yt-dlp.exe" (Join-Path $tmp 'yt-dlp.exe') (Get-SumaOficial "$motorUrl/SHA2-256SUMS" 'yt-dlp.exe')
@@ -84,13 +84,13 @@ Write-Host "Componentes: motor $verMotor + FFmpeg + $verDeno"
 # Icono, manifiesto y datos de versión dentro del .exe
 & $winres simply --arch amd64 --out rsrc --manifest gui `
     --icon build\app.ico `
-    --product-name Omnissiah --file-description 'Omnissiah - descargador de video y audio' `
+    --product-name Clipvault --file-description 'Clipvault - descargador de video y audio' `
     --product-version $version --file-version $version `
-    --original-filename Omnissiah.exe --copyright Omnissiah
+    --original-filename Clipvault.exe --copyright Clipvault
 if ($LASTEXITCODE) { throw 'go-winres falló' }
 
 New-Item -ItemType Directory -Force dist | Out-Null
-& $goExe build -trimpath -ldflags '-H windowsgui -s -w' -o dist\Omnissiah.exe .
+& $goExe build -trimpath -ldflags '-H windowsgui -s -w' -o dist\Clipvault.exe .
 if ($LASTEXITCODE) { throw 'go build falló' }
 
 # La app busca los componentes en la carpeta "componentes" junto a su .exe.
@@ -100,7 +100,7 @@ New-Item -ItemType Directory $destino | Out-Null
 Copy-Item (Join-Path $cache '*') $destino
 
 # ---------- Instalador ----------
-& $makensis /V2 build\instalador.nsi
+& $makensis /V2 "/DVERSION=$version" build\instalador.nsi
 if ($LASTEXITCODE) { throw 'makensis falló' }
 
 Get-ChildItem dist -File | Format-Table Name, @{n = 'MB'; e = { [math]::Round($_.Length / 1MB, 2) } }

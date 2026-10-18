@@ -1,5 +1,5 @@
-// Omnissiah — descargador de video y audio con yt-dlp.
-// Servidor local + interfaz web embebida que se abre en una ventana de app.
+// Clipvault — descargador de video y audio.
+// Servidor local + interfaz web embebida en una ventana nativa (WebView2).
 package main
 
 import (
@@ -13,15 +13,16 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
+
+	webview2 "github.com/jchv/go-webview2"
 )
 
-const Version = "1.2.0"
+const Version = "1.0.0"
 
 // Puerto fijo: sirve también para detectar si la app ya está abierta.
-const puerto = "127.0.0.1:47823"
+const puerto = "127.0.0.1:47830"
 
 //go:embed web
 var webFS embed.FS
@@ -46,15 +47,15 @@ type Config struct {
 func main() {
 	dataDir := carpetaDatos()
 	_ = os.MkdirAll(dataDir, 0o755)
-	logFile, err := os.OpenFile(filepath.Join(dataDir, "omnissiah.log"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
+	logFile, err := os.OpenFile(filepath.Join(dataDir, "clipvault.log"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
 	if err == nil {
 		log.SetOutput(logFile)
 	}
 
 	ln, err := net.Listen("tcp", puerto)
 	if err != nil {
-		// Ya hay una instancia abierta: solo mostramos su ventana.
-		abrirVentana("http://"+puerto+"/", dataDir, false)
+		// Ya hay una instancia abierta: traemos su ventana al frente.
+		traerAlFrente()
 		return
 	}
 
@@ -75,40 +76,39 @@ func main() {
 	}()
 
 	url := "http://" + puerto + "/"
-	if os.Getenv("OMNISSIAH_SIN_VENTANA") != "" {
+	if os.Getenv("CLIPVAULT_SIN_VENTANA") != "" {
 		log.Println("modo prueba, escuchando en", url)
 		select {}
 	}
-	if !abrirVentana(url, dataDir, true) {
-		// No pudimos seguir el proceso de la ventana: seguimos las señales de la interfaz.
-		app.esperarCierre()
+
+	ancho, alto := tamanoInicial()
+	w := webview2.NewWithOptions(webview2.WebViewOptions{
+		AutoFocus: true,
+		DataPath:  filepath.Join(dataDir, "webview"),
+		WindowOptions: webview2.WindowOptions{
+			Title: tituloVentana, Width: ancho, Height: alto, Center: true, IconId: idIcono,
+		},
+	})
+	if w == nil {
+		mensaje("Clipvault necesita Microsoft Edge WebView2, que viene con Windows 11. " +
+			"Instálalo desde https://developer.microsoft.com/microsoft-edge/webview2/ y vuelve a abrir Clipvault.")
+		return
 	}
+	defer w.Destroy()
+	prepararVentana(uintptr(w.Window()))
+	w.SetSize(900, 620, webview2.HintMin)
+	_ = w.Bind("caArrastrar", ventanaArrastrar)
+	_ = w.Bind("caRedimensionar", ventanaRedimensionar)
+	_ = w.Bind("caMinimizar", ventanaMinimizar)
+	_ = w.Bind("caMaximizar", ventanaMaximizar)
+	_ = w.Bind("caMaximizada", ventanaMaximizada)
+	_ = w.Bind("caCerrar", ventanaCerrar)
+	w.Navigate(url)
+	w.Run()
+
 	app.queue.CancelarTodo()
 	time.Sleep(500 * time.Millisecond)
 }
-
-// esperarCierre mantiene viva la app mientras la interfaz siga enviando señales.
-func (a *App) esperarCierre() {
-	for {
-		time.Sleep(2 * time.Second)
-		a.mu.Lock()
-		vivo := a.pingSeen && time.Since(a.lastPing) < 3*time.Minute
-		nunca := !a.pingSeen
-		a.mu.Unlock()
-		if nunca {
-			// La ventana nunca llegó a conectarse; damos margen al arranque.
-			if time.Since(inicio) > 60*time.Second {
-				return
-			}
-			continue
-		}
-		if !vivo {
-			return
-		}
-	}
-}
-
-var inicio = time.Now()
 
 func (a *App) cargarConfig() {
 	a.cfg = Config{Carpeta: carpetaDescargasPorDefecto(), Calidad: "max", Tipo: "video"}
@@ -116,8 +116,7 @@ func (a *App) cargarConfig() {
 	if err == nil {
 		_ = json.Unmarshal(b, &a.cfg)
 	}
-	// Vacía o con la ruta por defecto de la 1.0.0: pasamos a la nueva por defecto.
-	if a.cfg.Carpeta == "" || strings.EqualFold(filepath.Clean(a.cfg.Carpeta), carpetaDescargasAntigua()) {
+	if a.cfg.Carpeta == "" {
 		a.cfg.Carpeta = carpetaDescargasPorDefecto()
 	}
 }
@@ -161,7 +160,7 @@ func soloLocal(h http.HandlerFunc) http.HandlerFunc {
 			fallar(w, http.StatusForbidden, "origen no permitido")
 			return
 		}
-		if r.Method == http.MethodPost && r.Header.Get("X-Omnissiah") != "1" {
+		if r.Method == http.MethodPost && r.Header.Get("X-Clipvault") != "1" {
 			fallar(w, http.StatusForbidden, "falta cabecera")
 			return
 		}

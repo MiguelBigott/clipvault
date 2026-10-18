@@ -3,7 +3,7 @@
 const $ = (s) => document.querySelector(s);
 
 async function api(ruta, datos) {
-  const opciones = { headers: { "X-Omnissiah": "1" } };
+  const opciones = { headers: { "X-Clipvault": "1" } };
   if (datos !== undefined) {
     opciones.method = "POST";
     opciones.headers["Content-Type"] = "application/json";
@@ -29,13 +29,10 @@ function avisar(texto, esError) {
 
 const vistas = new Map(); // url -> {estado: cargando|ok|error, datos, error}
 
+// Un solo enlace por descarga: el campo es de una línea.
 function urlsDelTexto() {
-  const vistas = new Set();
-  for (const parte of $("#enlaces").value.split(/\s+/)) {
-    const p = parte.trim();
-    if (/^https?:\/\/\S+\.\S+/i.test(p)) vistas.add(p);
-  }
-  return [...vistas];
+  const p = $("#enlaces").value.trim().split(/\s+/)[0] || "";
+  return /^https?:\/\/\S+\.\S+/i.test(p) ? [p] : [];
 }
 
 function duracion(seg) {
@@ -66,7 +63,7 @@ function pintarVistas() {
     caja.className = "vista";
     if (!v || v.estado === "cargando") {
       caja.classList.add("cargando");
-      caja.textContent = "Consultando al espíritu-máquina…";
+      caja.textContent = "Consultando el enlace…";
     } else if (v.estado === "error") {
       caja.classList.add("error");
       const t = document.createElement("p");
@@ -99,7 +96,6 @@ function pintarVistas() {
   const listos = urls.filter((u) => vistas.get(u)?.estado !== "error");
   const btn = $("#btn-agregar");
   btn.disabled = listos.length === 0;
-  btn.textContent = listos.length > 1 ? `Descargar ${listos.length}` : "Descargar";
 }
 
 async function consultar(url) {
@@ -123,7 +119,7 @@ $("#enlaces").addEventListener("input", () => {
 });
 
 $("#enlaces").addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+  if (e.key === "Enter") {
     e.preventDefault();
     agregar();
   }
@@ -133,12 +129,42 @@ $("#btn-pegar").addEventListener("click", async () => {
   try {
     const t = await navigator.clipboard.readText();
     if (!t) return;
-    const area = $("#enlaces");
-    area.value = area.value.trim() ? area.value.trim() + "\n" + t.trim() : t.trim();
-    area.dispatchEvent(new Event("input"));
+    const campo = $("#enlaces");
+    campo.value = t.trim();
+    campo.dispatchEvent(new Event("input"));
   } catch {
     avisar("No pude leer el portapapeles. Pega con Ctrl+V en el cuadro.", true);
     $("#enlaces").focus();
+
+/* ---------------- Ventana (solo dentro de la app, no en un navegador) ---------------- */
+
+if (typeof window.caArrastrar === "function") {
+  $("#controles").hidden = false;
+  const barra = $("#barra");
+  const interactivo = "button, a, input, select, textarea";
+  barra.addEventListener("mousedown", (ev) => {
+    if (ev.button !== 0 || ev.detail > 1 || ev.target.closest(interactivo)) return;
+    window.caArrastrar();
+  });
+  const actualizarMaximizada = async () => {
+    const max = await window.caMaximizada();
+    document.body.classList.toggle("maximizada", max);
+    $("#btn-max").setAttribute("aria-label", max ? "Restaurar" : "Maximizar");
+  };
+  barra.addEventListener("dblclick", (ev) => {
+    if (!ev.target.closest(interactivo)) window.caMaximizar().then(actualizarMaximizada);
+  });
+  document.querySelectorAll(".redim").forEach((r) => r.addEventListener("mousedown", (ev) => {
+    if (ev.button === 0) window.caRedimensionar(r.dataset.borde);
+  }));
+  $("#btn-min").addEventListener("click", () => window.caMinimizar());
+  $("#btn-max").addEventListener("click", () => window.caMaximizar().then(actualizarMaximizada));
+  $("#btn-cerrar").addEventListener("click", () => window.caCerrar());
+  window.addEventListener("resize", actualizarMaximizada);
+  actualizarMaximizada();
+} else {
+  document.querySelectorAll(".redim").forEach((r) => r.remove());
+}
   }
 });
 
@@ -165,7 +191,8 @@ async function agregar() {
     });
     $("#enlaces").value = "";
     pintarVistas();
-    avisar(r.agregados === 1 ? "Añadido a la cola." : `${r.agregados} descargas añadidas a la cola.`);
+    avisar("Añadido a la bóveda.");
+    $("#enlaces").focus();
     refrescar();
   } catch (e) {
     avisar(e.message, true);
@@ -225,11 +252,10 @@ function pintarCola(cola) {
 
     li.className = `item ${it.estado}`;
     const img = li.querySelector(".mini img");
-    const src = it.miniatura || "craneo.png";
-    if (img.getAttribute("src") !== src) {
-      img.src = src;
-      img.style.imageRendering = it.miniatura ? "" : "pixelated";
-      img.style.objectFit = it.miniatura ? "" : "contain";
+    const src = it.miniatura || "";
+    if ((img.getAttribute("src") || "") !== src) {
+      if (src) img.src = src;
+      else img.removeAttribute("src");
     }
     li.querySelector(".nombre").textContent = it.titulo || it.url;
     li.querySelector(".nombre").title = it.titulo || it.url;
@@ -256,10 +282,8 @@ function pintarCola(cola) {
   }
   $("#vacio").hidden = cola.length > 0;
   $("#btn-limpiar").hidden = !cola.some((it) => ["listo", "error", "cancelado"].includes(it.estado));
-  const activa = cola.some((it) => it.estado === "descargando" || it.estado === "procesando");
-  $("#reliquia").classList.toggle("activa", activa);
   const pendientes = cola.filter((it) => ["cola", "descargando", "procesando"].includes(it.estado)).length;
-  document.title = pendientes ? `Omnissiah (${pendientes})` : "Omnissiah";
+  document.title = pendientes ? `Clipvault (${pendientes})` : "Clipvault";
 }
 
 $("#btn-limpiar").addEventListener("click", () => api("/api/limpiar", {}).then(refrescar));
@@ -288,7 +312,7 @@ function pintarComponentes(c) {
     const faltan = [!c.ytdlp && "el motor de descarga", !c.ffmpeg && "FFmpeg"].filter(Boolean);
     const peso = c.ffmpeg ? "unos 20 MB" : "unos 100 MB";
     $("#faltan-texto").textContent =
-      `${faltan.length > 1 ? "Faltan" : "Falta"} ${faltan.join(" y ")} para descargar. Usa «Reparar componentes» para volver a bajar ${faltan.length > 1 ? "los dos" : "lo que falta"} a la carpeta de Omnissiah (${peso}).`;
+      `${faltan.length > 1 ? "Faltan" : "Falta"} ${faltan.join(" y ")} para descargar. Usa «Reparar componentes» para volver a bajar ${faltan.length > 1 ? "los dos" : "lo que falta"} a la carpeta de Clipvault (${peso}).`;
   }
   $("#motor-listo").hidden = !c.ytdlp || ocupado;
 
@@ -333,7 +357,7 @@ async function refrescar() {
     pintarConfig(e.config, primera);
     pintarComponentes(e.componentes);
     pintarCola(e.cola);
-    if (primera) $("#version").textContent = `Omnissiah ${e.version}`;
+    if (primera) $("#version").textContent = `Clipvault ${e.version} · de la biblioteca Codex`;
     primera = false;
   } catch {
     /* el servidor puede estar cerrándose */
@@ -346,3 +370,33 @@ const latir = () => api("/api/ping").catch(() => {});
 latir();
 setInterval(latir, 5000);
 $("#enlaces").focus();
+
+/* ---------------- Ventana (solo dentro de la app, no en un navegador) ---------------- */
+
+if (typeof window.caArrastrar === "function") {
+  $("#controles").hidden = false;
+  const barra = $("#barra");
+  const interactivo = "button, a, input, select, textarea";
+  barra.addEventListener("mousedown", (ev) => {
+    if (ev.button !== 0 || ev.detail > 1 || ev.target.closest(interactivo)) return;
+    window.caArrastrar();
+  });
+  const actualizarMaximizada = async () => {
+    const max = await window.caMaximizada();
+    document.body.classList.toggle("maximizada", max);
+    $("#btn-max").setAttribute("aria-label", max ? "Restaurar" : "Maximizar");
+  };
+  barra.addEventListener("dblclick", (ev) => {
+    if (!ev.target.closest(interactivo)) window.caMaximizar().then(actualizarMaximizada);
+  });
+  document.querySelectorAll(".redim").forEach((r) => r.addEventListener("mousedown", (ev) => {
+    if (ev.button === 0) window.caRedimensionar(r.dataset.borde);
+  }));
+  $("#btn-min").addEventListener("click", () => window.caMinimizar());
+  $("#btn-max").addEventListener("click", () => window.caMaximizar().then(actualizarMaximizada));
+  $("#btn-cerrar").addEventListener("click", () => window.caCerrar());
+  window.addEventListener("resize", actualizarMaximizada);
+  actualizarMaximizada();
+} else {
+  document.querySelectorAll(".redim").forEach((r) => r.remove());
+}
