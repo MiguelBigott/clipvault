@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-const Version = "1.0.0"
+const Version = "1.1.0"
 
 // Puerto fijo: sirve también para detectar si la app ya está abierta.
 const puerto = "127.0.0.1:47823"

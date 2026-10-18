@@ -6,7 +6,7 @@
 
 > Descargador de **video y audio** para Windows: pegas un enlace y obtienes el MP4 o el MP3 con su portada y metadatos, sin consola ni comandos.
 
-[![Versión](https://img.shields.io/badge/versión-v1.0.0-c0161b)](CHANGELOG.md)
+[![Versión](https://img.shields.io/badge/versión-v1.1.0-c0161b)](CHANGELOG.md)
 [![Licencia](https://img.shields.io/badge/licencia-privada-555)](#️-créditos)
 [![CI](https://github.com/MiguelBigott/Omnissiah/actions/workflows/ci.yml/badge.svg)](https://github.com/MiguelBigott/Omnissiah/actions/workflows/ci.yml)
 [![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go&logoColor=white)](https://go.dev)

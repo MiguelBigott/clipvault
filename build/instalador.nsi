@@ -6,7 +6,7 @@ SetCompressor /SOLID lzma
 !include "LogicLib.nsh"
 
 !define APP "Omnissiah"
-!define VERSION "1.0.0"
+!define VERSION "1.1.0"
 !define REGAPP "Software\${APP}"
 !define UNINST "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP}"
 
@@ -17,7 +17,7 @@ InstallDir "$PROGRAMFILES64\${APP}"
 InstallDirRegKey HKLM "${REGAPP}" "InstallDir"
 RequestExecutionLevel admin
 BrandingText "${APP} ${VERSION}"
-VIProductVersion "1.0.0.0"
+VIProductVersion "1.1.0.0"
 VIAddVersionKey /LANG=1034 "ProductName" "${APP}"
 VIAddVersionKey /LANG=1034 "FileDescription" "Instalador de ${APP}"
 VIAddVersionKey /LANG=1034 "FileVersion" "${VERSION}"

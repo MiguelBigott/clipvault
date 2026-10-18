@@ -3,7 +3,7 @@
 Todas las versiones siguen [Versionado Semántico](https://semver.org/lang/es/). Cada una tiene su
 etiqueta `vX.Y.Z` y su página en [Releases](../../releases).
 
-## Sin publicar
+## [1.1.0] - 2026-10-18
 
 ### Cambiado
 - El instalador ahora instala en `C:\Program Files\Omnissiah` para todo el equipo (pide permisos de administrador). Al actualizar, quita la copia de la 1.0.0 en `%LOCALAPPDATA%\Programs` sin tocar la configuración ni los componentes.
@@ -16,6 +16,9 @@ etiqueta `vX.Y.Z` y su página en [Releases](../../releases).
 - `build/generar_logo.py`: genera el logo y todos los iconos a partir de la fuente vectorial.
 - CI en GitHub Actions y panel de actividad en el README.
 
+### Quitado
+- La interfaz, los mensajes y el instalador ya no nombran el sitio ni la herramienta de descarga.
+
 ## [1.0.0] - 2026-10-18
 
 Primera versión.
@@ -25,4 +28,5 @@ Primera versión.
 - Instalación automática de los componentes de descarga.
 - Instalador para Windows.
 
+[1.1.0]: https://github.com/MiguelBigott/Omnissiah/releases/tag/v1.1.0
 [1.0.0]: https://github.com/MiguelBigott/Omnissiah/releases/tag/v1.0.0
