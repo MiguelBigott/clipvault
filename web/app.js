@@ -136,36 +136,6 @@ $("#btn-pegar").addEventListener("click", async () => {
   } catch {
     avisar("No pude leer el portapapeles. Pega con Ctrl+V en el cuadro.", true);
     $("#enlaces").focus();
-
-/* ---------------- Ventana (solo dentro de la app, no en un navegador) ---------------- */
-
-if (typeof window.caArrastrar === "function") {
-  $("#controles").hidden = false;
-  const barra = $("#barra");
-  const interactivo = "button, a, input, select, textarea";
-  barra.addEventListener("mousedown", (ev) => {
-    if (ev.button !== 0 || ev.detail > 1 || ev.target.closest(interactivo)) return;
-    window.caArrastrar();
-  });
-  const actualizarMaximizada = async () => {
-    const max = await window.caMaximizada();
-    document.body.classList.toggle("maximizada", max);
-    $("#btn-max").setAttribute("aria-label", max ? "Restaurar" : "Maximizar");
-  };
-  barra.addEventListener("dblclick", (ev) => {
-    if (!ev.target.closest(interactivo)) window.caMaximizar().then(actualizarMaximizada);
-  });
-  document.querySelectorAll(".redim").forEach((r) => r.addEventListener("mousedown", (ev) => {
-    if (ev.button === 0) window.caRedimensionar(r.dataset.borde);
-  }));
-  $("#btn-min").addEventListener("click", () => window.caMinimizar());
-  $("#btn-max").addEventListener("click", () => window.caMaximizar().then(actualizarMaximizada));
-  $("#btn-cerrar").addEventListener("click", () => window.caCerrar());
-  window.addEventListener("resize", actualizarMaximizada);
-  actualizarMaximizada();
-} else {
-  document.querySelectorAll(".redim").forEach((r) => r.remove());
-}
   }
 });
 

@@ -3,6 +3,11 @@
 Todas las versiones siguen [Versionado Semántico](https://semver.org/lang/es/). Cada una tiene su
 etiqueta `vX.Y.Z` y su página en [Releases](../../releases).
 
+## [1.0.1] - 2026-10-18
+
+### Corregido
+- El botón «Pegar»: si Windows no dejaba leer el portapapeles, volvía a activar por segunda vez los controles de la ventana (minimizar, maximizar, cerrar y arrastrar). Ahora solo avisa que se pegue con Ctrl+V.
+
 ## [1.0.0] - 2026-10-18
 
 Primera versión como **Clipvault**. Antes la app se llamaba Omnissiah (hasta la 1.2.0); esta versión
@@ -19,4 +24,5 @@ parte de ese código.
 - Campo de enlace único: al pulsar Descargar el enlace pasa a la bóveda y el campo queda vacío para el siguiente.
 - Forma parte de la suite [Codex](https://github.com/MiguelBigott/codex), que puede instalarla, actualizarla y abrirla.
 
+[1.0.1]: https://github.com/MiguelBigott/clipvault/releases/tag/v1.0.1
 [1.0.0]: https://github.com/MiguelBigott/clipvault/releases/tag/v1.0.0
