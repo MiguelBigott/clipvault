@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Omnissiah</title>
+<link rel="icon" href="icono.png">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="altar">
+    <div class="reliquia" id="reliquia">
+      <img src="craneo.png" alt="" class="craneo" width="352" height="240">
+      <span class="ojo" aria-hidden="true"></span>
+    </div>
+    <h1 class="titulo">Alabado sea el Omnissiah</h1>
+    <p class="liturgia">El hierro no olvida. El dato no muere.</p>
+
+    <section class="panel" aria-labelledby="h-destino">
+      <h2 id="h-destino">Carpeta de destino</h2>
+      <p class="ruta" id="ruta-destino" title="">…</p>
+      <div class="botones">
+        <button class="btn" id="btn-cambiar-carpeta" type="button">Cambiar</button>
+        <button class="btn" id="btn-abrir-carpeta" type="button">Abrir carpeta</button>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-motor">
+      <h2 id="h-motor">Espíritu-máquina</h2>
+      <dl class="motor">
+        <div><dt>yt-dlp</dt><dd id="ver-ytdlp">…</dd></div>
+        <div><dt>ffmpeg</dt><dd id="ver-ffmpeg">…</dd></div>
+      </dl>
+      <div class="tarea" id="tarea" hidden>
+        <p id="tarea-texto"></p>
+        <div class="medidor"><span id="tarea-barra"></span></div>
+      </div>
+      <div class="botones" id="motor-listo">
+        <button class="btn" id="btn-actualizar" type="button">Actualizar yt-dlp</button>
+      </div>
+      <div class="faltan" id="motor-faltan" hidden>
+        <p id="faltan-texto">Faltan componentes para descargar.</p>
+        <div class="botones">
+          <button class="btn btn-fuerte" id="btn-instalar" type="button">Instalar componentes</button>
+          <button class="btn" id="btn-elegir-bin" type="button">Elegir carpeta</button>
+        </div>
+      </div>
+    </section>
+
+    <p class="version" id="version"></p>
+  </aside>
+
+  <main class="obra">
+    <section class="entrada" aria-labelledby="h-enlaces">
+      <div class="cabecera">
+        <h2 id="h-enlaces">Enlaces</h2>
+        <button class="btn btn-chico" id="btn-pegar" type="button">Pegar</button>
+      </div>
+      <textarea id="enlaces" rows="3" spellcheck="false" autocomplete="off"
+        placeholder="Pega uno o varios enlaces de YouTube, uno por línea"></textarea>
+
+      <div class="vistas" id="vistas" aria-live="polite"></div>
+
+      <div class="opciones">
+        <div class="selector" role="radiogroup" aria-label="Qué descargar">
+          <label><input type="radio" name="tipo" value="video" checked><span>Video MP4</span></label>
+          <label><input type="radio" name="tipo" value="audio"><span>Solo audio MP3</span></label>
+        </div>
+        <label class="calidad" id="calidad-caja">
+          <span>Calidad</span>
+          <select id="calidad">
+            <option value="max">Máxima disponible</option>
+            <option value="1080">Hasta 1080p</option>
+            <option value="720">Hasta 720p</option>
+            <option value="480">Hasta 480p</option>
+            <option value="compat">Compatible con todo (H.264)</option>
+          </select>
+        </label>
+        <button class="btn btn-fuerte btn-grande" id="btn-agregar" type="button" disabled>Descargar</button>
+      </div>
+    </section>
+
+    <section class="cola" aria-labelledby="h-cola">
+      <div class="cabecera">
+        <h2 id="h-cola">Cola de descargas</h2>
+        <button class="btn btn-chico" id="btn-limpiar" type="button" hidden>Quitar terminadas</button>
+      </div>
+      <ol class="lista" id="lista"></ol>
+      <p class="vacio" id="vacio">La cola está vacía. Pega un enlace arriba para empezar.</p>
+    </section>
+  </main>
+</div>
+
+<div class="aviso" id="aviso" role="status" hidden></div>
+
+<template id="tpl-item">
+  <li class="item">
+    <div class="mini"><img alt="" loading="lazy"></div>
+    <div class="cuerpo">
+      <p class="nombre"></p>
+      <p class="detalle"></p>
+      <div class="medidor"><span></span></div>
+    </div>
+    <div class="acciones"></div>
+  </li>
+</template>
+
+<script src="app.js"></script>
+</body>
+</html>
