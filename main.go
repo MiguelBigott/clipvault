@@ -5,7 +5,6 @@ package main
 import (
 	"embed"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/fs"
 	"log"
@@ -20,7 +19,7 @@ import (
 	webview2 "github.com/jchv/go-webview2"
 )
 
-const Version = "1.2.1"
+const Version = "1.3.0"
 
 // Puerto fijo: sirve también para detectar si la app ya está abierta.
 const puerto = "127.0.0.1:47830"
@@ -92,8 +91,7 @@ func main() {
 		},
 	})
 	if w == nil {
-		mensaje("ClipVault necesita Microsoft Edge WebView2, que viene con Windows 11. " +
-			"Instálalo desde https://developer.microsoft.com/microsoft-edge/webview2/ y vuelve a abrir ClipVault.")
+		mensaje(textosDe(idiomaApp()).FaltaWebView)
 		return
 	}
 	defer w.Destroy()
@@ -148,28 +146,32 @@ func responder(w http.ResponseWriter, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
-func fallar(w http.ResponseWriter, status int, msg string) {
+// fallar responde con un error que la interfaz muestra en su idioma.
+func fallar(w http.ResponseWriter, status int, m *Mensaje) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})
+	_ = json.NewEncoder(w).Encode(map[string]*Mensaje{"error": m})
 }
 
 func leerJSON(r *http.Request, v any) error {
 	if r.Method != http.MethodPost {
-		return errors.New("método no permitido")
+		return msj("peticionInvalida")
 	}
-	return json.NewDecoder(http.MaxBytesReader(nil, r.Body, 1<<20)).Decode(v)
+	if err := json.NewDecoder(http.MaxBytesReader(nil, r.Body, 1<<20)).Decode(v); err != nil {
+		return msj("peticionInvalida")
+	}
+	return nil
 }
 
 // Solo aceptamos peticiones de la propia interfaz (evita que otras webs usen la API).
 func soloLocal(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if o := r.Header.Get("Origin"); o != "" && o != "http://"+puerto {
-			fallar(w, http.StatusForbidden, "origen no permitido")
+			fallar(w, http.StatusForbidden, msj("accesoDenegado"))
 			return
 		}
 		if r.Method == http.MethodPost && r.Header.Get("X-Clipvault") != "1" {
-			fallar(w, http.StatusForbidden, "falta cabecera")
+			fallar(w, http.StatusForbidden, msj("accesoDenegado"))
 			return
 		}
 		h(w, r)
@@ -189,6 +191,7 @@ func (a *App) rutas(mux *http.ServeMux) {
 		cfg := a.config()
 		responder(w, map[string]any{
 			"version":     Version,
+			"idioma":      idiomaApp(),
 			"config":      cfg,
 			"componentes": a.comp.Estado(),
 			"cola":        a.queue.Snapshot(),
@@ -200,12 +203,12 @@ func (a *App) rutas(mux *http.ServeMux) {
 			URL string `json:"url"`
 		}
 		if err := leerJSON(r, &req); err != nil || req.URL == "" {
-			fallar(w, http.StatusBadRequest, "URL vacía")
+			fallar(w, http.StatusBadRequest, msj("urlVacia"))
 			return
 		}
 		info, err := a.comp.VistaPrevia(r.Context(), req.URL)
 		if err != nil {
-			fallar(w, http.StatusUnprocessableEntity, err.Error())
+			fallar(w, http.StatusUnprocessableEntity, comoMensaje(err))
 			return
 		}
 		responder(w, info)
@@ -224,7 +227,7 @@ func (a *App) rutas(mux *http.ServeMux) {
 			} `json:"clip"`
 		}
 		if err := leerJSON(r, &req); err != nil {
-			fallar(w, http.StatusBadRequest, err.Error())
+			fallar(w, http.StatusBadRequest, comoMensaje(err))
 			return
 		}
 		if req.Tipo != "audio" {
@@ -236,7 +239,7 @@ func (a *App) rutas(mux *http.ServeMux) {
 			valido := len(req.URLs) == 1 && v.Lista == 0 && req.Clip.Desde >= 0 && req.Clip.Hasta-req.Clip.Desde >= 1 &&
 				(v.Duracion == 0 || req.Clip.Hasta <= v.Duracion+1)
 			if !valido {
-				fallar(w, http.StatusBadRequest, "El tramo del clip no es válido: revisa Desde y Hasta.")
+				fallar(w, http.StatusBadRequest, msj("clipInvalido"))
 				return
 			}
 			desde, hasta = req.Clip.Desde, req.Clip.Hasta
@@ -262,7 +265,7 @@ func (a *App) rutas(mux *http.ServeMux) {
 			ID int `json:"id"`
 		}
 		if err := leerJSON(r, &req); err != nil {
-			fallar(w, http.StatusBadRequest, err.Error())
+			fallar(w, http.StatusBadRequest, comoMensaje(err))
 			return
 		}
 		a.queue.Cancelar(req.ID)
@@ -274,7 +277,7 @@ func (a *App) rutas(mux *http.ServeMux) {
 			ID int `json:"id"`
 		}
 		if err := leerJSON(r, &req); err != nil {
-			fallar(w, http.StatusBadRequest, err.Error())
+			fallar(w, http.StatusBadRequest, comoMensaje(err))
 			return
 		}
 		a.queue.Reintentar(req.ID)
@@ -283,7 +286,7 @@ func (a *App) rutas(mux *http.ServeMux) {
 
 	mux.HandleFunc("/api/limpiar", soloLocal(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			fallar(w, http.StatusMethodNotAllowed, "método no permitido")
+			fallar(w, http.StatusMethodNotAllowed, msj("peticionInvalida"))
 			return
 		}
 		a.queue.LimpiarTerminados()
@@ -292,11 +295,11 @@ func (a *App) rutas(mux *http.ServeMux) {
 
 	mux.HandleFunc("/api/carpeta/elegir", soloLocal(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			fallar(w, http.StatusMethodNotAllowed, "método no permitido")
+			fallar(w, http.StatusMethodNotAllowed, msj("peticionInvalida"))
 			return
 		}
 		actual := a.config().Carpeta
-		elegida, err := elegirCarpeta("Elige dónde guardar las descargas", actual)
+		elegida, err := elegirCarpeta(textosDe(idiomaApp()).ElegirCarpeta, actual)
 		if err != nil || elegida == "" {
 			responder(w, map[string]any{"carpeta": actual, "cambiada": false})
 			return
@@ -328,7 +331,7 @@ func (a *App) rutas(mux *http.ServeMux) {
 
 	mux.HandleFunc("/api/componentes/instalar", soloLocal(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			fallar(w, http.StatusMethodNotAllowed, "método no permitido")
+			fallar(w, http.StatusMethodNotAllowed, msj("peticionInvalida"))
 			return
 		}
 		a.comp.InstalarEnSegundoPlano()
@@ -337,7 +340,7 @@ func (a *App) rutas(mux *http.ServeMux) {
 
 	mux.HandleFunc("/api/componentes/actualizar", soloLocal(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			fallar(w, http.StatusMethodNotAllowed, "método no permitido")
+			fallar(w, http.StatusMethodNotAllowed, msj("peticionInvalida"))
 			return
 		}
 		a.comp.ActualizarEnSegundoPlano()

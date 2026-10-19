@@ -11,7 +11,7 @@ async function api(ruta, datos) {
   }
   const r = await fetch(ruta, opciones);
   const json = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(json.error || "Error inesperado");
+  if (!r.ok) throw new Error(json.error ? tm(json.error) : t("errorInesperado"));
   return json;
 }
 
@@ -45,10 +45,10 @@ function duracion(seg) {
 
 function describirVista(v) {
   const partes = [];
-  if (v.lista) partes.push(`Lista de ${v.lista} videos`);
+  if (v.lista) partes.push(t("vistaLista", { n: v.lista }));
   if (v.canal) partes.push(v.canal);
   if (v.duracion) partes.push(duracion(v.duracion));
-  if (v.altura) partes.push(`hasta ${v.altura}p`);
+  if (v.altura) partes.push(t("vistaAltura", { altura: v.altura }));
   return partes.join(", ");
 }
 
@@ -63,7 +63,7 @@ function pintarVistas() {
     caja.className = "vista";
     if (!v || v.estado === "cargando") {
       caja.classList.add("cargando");
-      caja.textContent = "Consultando el enlace…";
+      caja.textContent = t("consultando");
     } else if (v.estado === "error") {
       caja.classList.add("error");
       const t = document.createElement("p");
@@ -90,7 +90,7 @@ function pintarVistas() {
     const mas = document.createElement("p");
     mas.className = "mas";
     const n = urls.length - mostrar.length;
-    mas.textContent = `y ${n} enlace${n === 1 ? "" : "s"} más`;
+    mas.textContent = n === 1 ? t("masEnlace") : t("masEnlaces", { n });
     cont.append(mas);
   }
   const listos = urls.filter((u) => vistas.get(u)?.estado !== "error");
@@ -134,7 +134,7 @@ $("#btn-pegar").addEventListener("click", async () => {
     campo.value = t.trim();
     campo.dispatchEvent(new Event("input"));
   } catch {
-    avisar("No pude leer el portapapeles. Pega con Ctrl+V en el cuadro.", true);
+    avisar(t("portapapeles"), true);
     $("#enlaces").focus();
   }
 });
@@ -164,7 +164,7 @@ async function agregar() {
     clip.activo = false;
     $("#enlaces").value = "";
     pintarVistas();
-    avisar("Añadido a la bóveda.");
+    avisar(t("anadido"));
     $("#enlaces").focus();
     refrescar();
   } catch (e) {
@@ -201,9 +201,7 @@ function actualizarClip() {
   }
   const btn = $("#btn-clip");
   btn.disabled = dur < 2;
-  btn.title = dur >= 2 ? "Descargar solo un tramo del video"
-    : v?.datos?.lista ? "Las listas de reproducción se descargan completas"
-    : "Pega un enlace para elegir un tramo";
+  btn.title = t(dur >= 2 ? "clipCon" : v?.datos?.lista ? "clipLista" : "clipSin");
   if (btn.disabled) clip.activo = false;
   pintarClip();
 }
@@ -212,7 +210,7 @@ function pintarClip() {
   const activo = clip.activo && clip.dur > 0;
   $("#btn-clip").setAttribute("aria-pressed", String(activo));
   $("#clip-panel").hidden = !activo;
-  $("#btn-agregar").textContent = activo ? "Descargar clip" : "Descargar";
+  $("#btn-agregar").textContent = t(activo ? "descargarClip" : "descargar");
   if (!activo) return;
   const pct = (s) => `${(s / clip.dur) * 100}%`;
   $("#clip-sel").style.left = pct(clip.desde);
@@ -238,7 +236,7 @@ function pintarClip() {
   for (const [id, valor] of [["#clip-desde", clip.desde], ["#clip-hasta", clip.hasta]]) {
     if (document.activeElement !== $(id)) $(id).value = tiempo(valor);
   }
-  $("#clip-dur").textContent = `${tiempo(clip.hasta - clip.desde)} seleccionados`;
+  $("#clip-dur").textContent = t("clipSeleccion", { tiempo: tiempo(clip.hasta - clip.desde) });
 }
 
 function moverClip(cual, seg) {
@@ -297,7 +295,7 @@ for (const [id, cual] of [["#clip-desde", "desde"], ["#clip-hasta", "hasta"]]) {
   const campo = $(id);
   const aplicar = () => {
     const seg = leerTiempo(campo.value);
-    if (Number.isNaN(seg)) avisar("Escribe el tiempo como 90, 1:30 o 1:02:15.", true);
+    if (Number.isNaN(seg)) avisar(t("formatoTiempo"), true);
     else moverClip(cual, seg);
     campo.value = tiempo(clip[cual]);
   };
@@ -307,32 +305,30 @@ for (const [id, cual] of [["#clip-desde", "desde"], ["#clip-hasta", "hasta"]]) {
 
 /* ---------------- Cola ---------------- */
 
-const etiquetaCalidad = {
-  max: "Máxima", 1080: "1080p", 720: "720p", 480: "480p", compat: "H.264",
-};
+const etiquetaCalidad = (c) => ({ max: t("calCorta"), 1080: "1080p", 720: "720p", 480: "480p", compat: "H.264" })[c] || "";
 
 function detalleItem(it) {
-  const tramo = it.clipHasta ? `, clip de ${tiempo(it.clipDesde)} a ${tiempo(it.clipHasta)}` : "";
+  const tramo = it.clipHasta ? `, ${t("itemClip", { desde: tiempo(it.clipDesde), hasta: tiempo(it.clipHasta) })}` : "";
   return detalleBase(it) + (["cola", "descargando", "listo"].includes(it.estado) ? tramo : "");
 }
 
 function detalleBase(it) {
-  const tipo = it.tipo === "audio" ? "MP3" : `MP4 ${etiquetaCalidad[it.calidad] || ""}`.trim();
+  const tipo = it.tipo === "audio" ? "MP3" : `MP4 ${etiquetaCalidad(it.calidad)}`.trim();
   switch (it.estado) {
-    case "cola": return `${tipo}, en espera`;
+    case "cola": return `${tipo}, ${t("itemEspera")}`;
     case "descargando": {
-      const p = [it.fase];
-      if (it.lista && it.indice) p.push(`video ${it.indice} de ${it.lista}`);
+      const p = [t("fase." + it.fase)];
+      if (it.lista && it.indice) p.push(t("itemVideo", { i: it.indice, n: it.lista }));
       if (it.progreso) p.push(`${Math.floor(it.progreso * 100)} %`);
       if (it.tamano) p.push(it.tamano);
       if (it.velocidad) p.push(it.velocidad);
-      if (it.restante) p.push(`quedan ${it.restante}`);
+      if (it.restante) p.push(t("itemQuedan", { t: it.restante }));
       return p.join(", ");
     }
-    case "procesando": return `${it.fase}…`;
-    case "listo": return `${tipo}, completado`;
-    case "cancelado": return "Cancelada";
-    case "error": return it.error || "La descarga falló";
+    case "procesando": return `${t("fase." + it.fase)}…`;
+    case "listo": return `${tipo}, ${t("itemCompletado")}`;
+    case "cancelado": return t("itemCancelada");
+    case "error": return it.error ? tm(it.error) : t("descargaFallo");
   }
   return "";
 }
@@ -347,7 +343,7 @@ function boton(texto, fn) {
 }
 
 const filas = new Map(); // id -> li
-const ETIQUETA_ESTADO = { cola: "en cola", descargando: "descargando", procesando: "procesando", listo: "lista", cancelado: "cancelada", error: "error" };
+const ESTADO_CLAVE = { cola: "estCola", descargando: "estDescargando", procesando: "estProcesando", listo: "estListo", cancelado: "estCancelado", error: "estError" };
 
 function pintarCola(cola) {
   const lista = $("#lista");
@@ -374,19 +370,19 @@ function pintarCola(cola) {
     li.querySelector(".medidor span").style.width = `${Math.round((it.progreso || 0) * 100)}%`;
     const est = li.querySelector(".est");
     est.className = `est ${it.estado}`;
-    est.textContent = it.estado === "descargando" && it.progreso ? `${Math.floor(it.progreso * 100)} %` : ETIQUETA_ESTADO[it.estado] || "";
+    est.textContent = it.estado === "descargando" && it.progreso ? `${Math.floor(it.progreso * 100)} %` : (ESTADO_CLAVE[it.estado] ? t(ESTADO_CLAVE[it.estado]) : "");
 
-    const firma = `${it.estado}|${it.archivo ? 1 : 0}`;
+    const firma = `${it.estado}|${it.archivo ? 1 : 0}|${idiomaActual}`;
     const acc = li.querySelector(".acciones");
     if (acc.dataset.firma !== firma) {
       acc.dataset.firma = firma;
       acc.replaceChildren();
       if (["cola", "descargando", "procesando"].includes(it.estado)) {
-        acc.append(boton("Cancelar", () => api("/api/cancelar", { id: it.id }).then(refrescar)));
+        acc.append(boton(t("cancelar"), () => api("/api/cancelar", { id: it.id }).then(refrescar)));
       } else if (it.estado === "error" || it.estado === "cancelado") {
-        acc.append(boton("Reintentar", () => api("/api/reintentar", { id: it.id }).then(refrescar)));
+        acc.append(boton(t("reintentar"), () => api("/api/reintentar", { id: it.id }).then(refrescar)));
       } else if (it.estado === "listo") {
-        acc.append(boton(it.archivo ? "Mostrar archivo" : "Abrir carpeta",
+        acc.append(boton(t(it.archivo ? "mostrarArchivo" : "abrirCarpetaBtn"),
           () => api("/api/carpeta/abrir", { archivo: it.archivo || "" })));
       }
     }
@@ -395,7 +391,7 @@ function pintarCola(cola) {
     if (!vivos.has(id)) { li.remove(); filas.delete(id); }
   }
   $("#vacio").hidden = cola.length > 0;
-  $("#cuenta").textContent = cola.length ? `${cola.length} descarga${cola.length === 1 ? "" : "s"}` : "";
+  $("#cuenta").textContent = !cola.length ? "" : cola.length === 1 ? t("descarga1") : t("descargas", { n: cola.length });
   $("#btn-limpiar").hidden = !cola.some((it) => ["listo", "error", "cancelado"].includes(it.estado));
   const pendientes = cola.filter((it) => ["cola", "descargando", "procesando"].includes(it.estado)).length;
   document.title = pendientes ? `ClipVault (${pendientes})` : "ClipVault";
@@ -409,30 +405,30 @@ let ultimoMensaje = "";
 
 function pintarComponentes(c) {
   const vy = $("#ver-ytdlp"), vf = $("#ver-ffmpeg");
-  vy.textContent = c.ytdlp ? (c.versionYtdlp || "instalado") : "no encontrado";
+  vy.textContent = c.ytdlp ? (c.versionYtdlp || t("instalado")) : t("noEncontrado");
   vy.classList.toggle("falta", !c.ytdlp);
   vy.title = c.ytdlp || "";
-  vf.textContent = c.ffmpeg ? "instalado" : "no encontrado";
+  vf.textContent = c.ffmpeg ? t("instalado") : t("noEncontrado");
   vf.classList.toggle("falta", !c.ffmpeg);
   vf.title = c.ffmpeg || "";
 
   const ocupado = !!c.tarea;
   $("#tarea").hidden = !ocupado;
   if (ocupado) {
-    $("#tarea-texto").textContent = c.tareaTexto + "…";
+    $("#tarea-texto").textContent = t("tarea." + c.tareaTexto) + "…";
     $("#tarea-barra").style.width = `${Math.round(c.tareaProgreso * 100)}%`;
   }
   $("#motor-faltan").hidden = c.listo || ocupado;
   if (!c.listo) {
-    const faltan = [!c.ytdlp && "el motor de descarga", !c.ffmpeg && "FFmpeg"].filter(Boolean);
-    const peso = c.ffmpeg ? "unos 20 MB" : "unos 100 MB";
-    $("#faltan-texto").textContent =
-      `${faltan.length > 1 ? "Faltan" : "Falta"} ${faltan.join(" y ")} para descargar. Usa «Reparar componentes» para volver a bajar ${faltan.length > 1 ? "los dos" : "lo que falta"} a la carpeta de ClipVault (${peso}).`;
+    const peso = t("pesoMb", { mb: c.ffmpeg ? 20 : 100 });
+    $("#faltan-texto").textContent = !c.ytdlp && !c.ffmpeg ? t("faltanDos", { peso })
+      : t("faltaUno", { que: t(c.ytdlp ? "queFfmpeg" : "queMotor"), peso });
   }
   $("#motor-listo").hidden = !c.ytdlp || ocupado;
 
-  if (c.mensaje && c.mensaje !== ultimoMensaje) avisar(c.mensaje, c.mensajeError);
-  ultimoMensaje = c.mensaje;
+  const mensaje = JSON.stringify(c.mensaje || "");
+  if (c.mensaje && mensaje !== ultimoMensaje) avisar(tm(c.mensaje), c.mensajeError);
+  ultimoMensaje = mensaje;
 }
 
 function pintarConfig(cfg, primera) {
@@ -454,7 +450,7 @@ $("#btn-cambiar-carpeta").addEventListener("click", async (e) => {
   try {
     const r = await api("/api/carpeta/elegir", {});
     $("#ruta-destino").textContent = r.carpeta;
-    if (r.cambiada) avisar("Las descargas se guardarán en la nueva carpeta.");
+    if (r.cambiada) avisar(t("carpetaNueva"));
   } finally {
     e.currentTarget.disabled = false;
   }
@@ -469,10 +465,16 @@ let primera = true;
 async function refrescar() {
   try {
     const e = await api("/api/estado");
+    // Idioma: el que esté elegido en Codex (si cambia allí, la app cambia sola).
+    if (e.idioma !== idiomaActual || primera) {
+      aplicarIdioma(e.idioma);
+      $("#version").textContent = t("version", { version: e.version });
+      pintarVistas();
+      document.body.classList.remove("cargando");
+    }
     pintarConfig(e.config, primera);
     pintarComponentes(e.componentes);
     pintarCola(e.cola);
-    if (primera) $("#version").textContent = `ClipVault ${e.version} · de la biblioteca Codex`;
     primera = false;
   } catch {
     /* el servidor puede estar cerrándose */
@@ -499,7 +501,7 @@ if (typeof window.caArrastrar === "function") {
   const actualizarMaximizada = async () => {
     const max = await window.caMaximizada();
     document.body.classList.toggle("maximizada", max);
-    $("#btn-max").setAttribute("aria-label", max ? "Restaurar" : "Maximizar");
+    $("#btn-max").setAttribute("aria-label", t(max ? "restaurar" : "maximizar"));
   };
   barra.addEventListener("dblclick", (ev) => {
     if (!ev.target.closest(interactivo)) window.caMaximizar().then(actualizarMaximizada);
@@ -515,3 +517,6 @@ if (typeof window.caArrastrar === "function") {
 } else {
   document.querySelectorAll(".redim").forEach((r) => r.remove());
 }
+
+// Si el servidor no responde, la interfaz se muestra igual (en español).
+setTimeout(() => document.body.classList.remove("cargando"), 2000);

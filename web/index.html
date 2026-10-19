@@ -7,7 +7,7 @@
 <link rel="icon" href="logo.svg">
 <link rel="stylesheet" href="app.css">
 </head>
-<body>
+<body class="cargando">
 
 <div class="redim redim-arriba" data-borde="arriba"></div>
 <div class="redim redim-arriba-izq" data-borde="arriba-izq"></div>
@@ -18,9 +18,9 @@
   <div class="marca"><img class="marca-logo" src="logo.svg" alt=""><span class="marca-texto">clipvault</span></div>
   <div class="controles-caja">
     <div class="controles" id="controles" hidden>
-      <button type="button" id="btn-min" aria-label="Minimizar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
-      <button type="button" id="btn-max" aria-label="Maximizar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11"/></svg></button>
-      <button type="button" id="btn-cerrar" class="cerrar" aria-label="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
+      <button type="button" id="btn-min" aria-label="Minimizar" data-t-aria="minimizar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+      <button type="button" id="btn-max" aria-label="Maximizar" data-t-aria="maximizar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11"/></svg></button>
+      <button type="button" id="btn-cerrar" class="cerrar" aria-label="Cerrar" data-t-aria="cerrar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
     </div>
   </div>
 </header>
@@ -28,60 +28,60 @@
 <div class="cuerpo">
   <!-- Panel izquierdo: la nueva descarga -->
   <section class="panel nueva" aria-labelledby="h-encargo">
-    <h1 class="ruta" id="h-encargo">nueva descarga</h1>
+    <h1 class="ruta" id="h-encargo" data-t="nueva">nueva descarga</h1>
 
     <div class="campo">
-      <input id="enlaces" type="url" spellcheck="false" autocomplete="off" aria-label="Enlace del video"
-        placeholder="Pega el enlace del video">
-      <button class="enlace" id="btn-pegar" type="button">pegar</button>
+      <input id="enlaces" type="url" spellcheck="false" autocomplete="off" aria-label="Enlace del video" data-t-aria="enlaceAria"
+        placeholder="Pega el enlace del video" data-t-placeholder="enlacePh">
+      <button class="enlace" id="btn-pegar" type="button" data-t="pegar">pegar</button>
     </div>
 
     <div class="vistas" id="vistas" aria-live="polite"></div>
 
     <div class="opciones">
-      <div class="segmentos" role="radiogroup" aria-label="Qué descargar">
-        <label><input type="radio" name="tipo" value="video" checked><span>video mp4</span></label>
-        <label><input type="radio" name="tipo" value="audio"><span>solo audio mp3</span></label>
+      <div class="segmentos" role="radiogroup" aria-label="Qué descargar" data-t-aria="queDescargar">
+        <label><input type="radio" name="tipo" value="video" checked><span data-t="tipoVideo">video mp4</span></label>
+        <label><input type="radio" name="tipo" value="audio"><span data-t="tipoAudio">solo audio mp3</span></label>
       </div>
       <button class="boton-clip" id="btn-clip" type="button" aria-pressed="false" aria-controls="clip-panel" disabled
         title="Pega un enlace para elegir un tramo">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.12 15.88M14.47 14.48L20 20M8.12 8.12L12 12"/></svg>clip
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.12 15.88M14.47 14.48L20 20M8.12 8.12L12 12"/></svg><span data-t="clip">clip</span>
       </button>
     </div>
 
     <label class="calidad" id="calidad-caja">
-      <span>calidad</span>
+      <span data-t="calidad">calidad</span>
       <select id="calidad">
-        <option value="max">Máxima disponible</option>
-        <option value="1080">Hasta 1080p</option>
-        <option value="720">Hasta 720p</option>
-        <option value="480">Hasta 480p</option>
-        <option value="compat">Compatible con todo (H.264)</option>
+        <option value="max" data-t="calMax">Máxima disponible</option>
+        <option value="1080" data-t="cal1080">Hasta 1080p</option>
+        <option value="720" data-t="cal720">Hasta 720p</option>
+        <option value="480" data-t="cal480">Hasta 480p</option>
+        <option value="compat" data-t="calCompat">Compatible con todo (H.264)</option>
       </select>
     </label>
 
     <!-- Clip: tramo del video; la línea de tiempo usa la duración del video pegado -->
     <div class="linea-tiempo" id="clip-panel" hidden>
-      <div class="lt-cabeza"><span>Arrastra los marcadores para elegir el tramo</span>
-        <button class="enlace" id="clip-quitar" type="button">quitar clip</button></div>
+      <div class="lt-cabeza"><span data-t="clipArrastra">Arrastra los marcadores para elegir el tramo</span>
+        <button class="enlace" id="clip-quitar" type="button" data-t="clipQuitar">quitar clip</button></div>
       <div class="pista-tiempo" id="clip-pista">
         <div class="base"></div>
         <div class="sel" id="clip-sel"></div>
-        <button class="asa" id="clip-asa-desde" type="button" role="slider" aria-label="Inicio del clip"></button>
-        <button class="asa" id="clip-asa-hasta" type="button" role="slider" aria-label="Fin del clip"></button>
+        <button class="asa" id="clip-asa-desde" type="button" role="slider" aria-label="Inicio del clip" data-t-aria="clipInicio"></button>
+        <button class="asa" id="clip-asa-hasta" type="button" role="slider" aria-label="Fin del clip" data-t-aria="clipFin"></button>
       </div>
       <div class="marcas" id="clip-marcas"></div>
       <div class="lt-campos">
-        <label>desde <input id="clip-desde" type="text" inputmode="numeric" spellcheck="false" autocomplete="off"></label>
-        <label>hasta <input id="clip-hasta" type="text" inputmode="numeric" spellcheck="false" autocomplete="off"></label>
+        <label><span data-t="clipDesde">desde</span> <input id="clip-desde" type="text" inputmode="numeric" spellcheck="false" autocomplete="off"></label>
+        <label><span data-t="clipHasta">hasta</span> <input id="clip-hasta" type="text" inputmode="numeric" spellcheck="false" autocomplete="off"></label>
         <span class="dur" id="clip-dur"></span>
       </div>
     </div>
 
-    <p class="destino"><span>se guarda en</span>
+    <p class="destino"><span data-t="seGuarda">se guarda en</span>
       <span class="destino-acciones">
-        <button class="enlace" id="btn-cambiar-carpeta" type="button">cambiar</button>
-        <button class="enlace" id="btn-abrir-carpeta" type="button">abrir carpeta</button>
+        <button class="enlace" id="btn-cambiar-carpeta" type="button" data-t="cambiar">cambiar</button>
+        <button class="enlace" id="btn-abrir-carpeta" type="button" data-t="abrirCarpeta">abrir carpeta</button>
       </span>
       <b id="ruta-destino" title="">…</b>
     </p>
@@ -92,26 +92,26 @@
   <!-- Panel derecho: la bóveda (cola de descargas) -->
   <section class="panel boveda" aria-labelledby="h-boveda">
     <div class="cabecera">
-      <h1 class="ruta" id="h-boveda">bóveda</h1>
+      <h1 class="ruta" id="h-boveda" data-t="boveda">bóveda</h1>
       <span class="cabecera-lado">
-        <button class="enlace" id="btn-limpiar" type="button" hidden>quitar terminadas</button>
+        <button class="enlace" id="btn-limpiar" type="button" hidden data-t="quitarTerminadas">quitar terminadas</button>
         <span class="cuenta" id="cuenta"></span>
       </span>
     </div>
 
     <div class="faltan" id="motor-faltan" hidden>
-      <p id="faltan-texto">Faltan componentes para descargar.</p>
-      <button class="boton boton-fuerte boton-chico" id="btn-instalar" type="button">Reparar componentes</button>
+      <p id="faltan-texto" data-t="faltanInicial">Faltan componentes para descargar.</p>
+      <button class="boton boton-fuerte boton-chico" id="btn-instalar" type="button" data-t="reparar">Reparar componentes</button>
     </div>
 
     <ol class="lista" id="lista"></ol>
-    <p class="vacio" id="vacio">La bóveda está vacía. Pega un enlace a la izquierda para empezar.</p>
+    <p class="vacio" id="vacio" data-t="vacio">La bóveda está vacía. Pega un enlace a la izquierda para empezar.</p>
   </section>
 </div>
 
 <footer class="pie">
-  <span class="motor">motor de descarga <span id="ver-ytdlp">…</span> · ffmpeg <span id="ver-ffmpeg">…</span></span>
-  <span id="motor-listo"><button class="enlace" id="btn-actualizar" type="button">actualizar motor</button></span>
+  <span class="motor"><span data-t="motor">motor de descarga</span> <span id="ver-ytdlp">…</span> · ffmpeg <span id="ver-ffmpeg">…</span></span>
+  <span id="motor-listo"><button class="enlace" id="btn-actualizar" type="button" data-t="actualizarMotor">actualizar motor</button></span>
   <span class="tarea" id="tarea" hidden><span id="tarea-texto"></span><span class="medidor"><span id="tarea-barra"></span></span></span>
   <span class="pie-espacio"></span>
   <span id="version"></span>
@@ -134,6 +134,7 @@
   </li>
 </template>
 
+<script src="i18n.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

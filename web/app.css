@@ -291,3 +291,8 @@ body.maximizada .redim { display: none; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* Hasta saber el idioma, la interfaz no se muestra (evita ver el español un instante). */
+body.cargando .barra, body.cargando .cuerpo, body.cargando .pie { visibility: hidden; }
+:root:lang(zh) body { font-family: "Inter", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif; }
+:root:lang(ja) body { font-family: "Inter", "Yu Gothic UI", "Meiryo UI", sans-serif; }

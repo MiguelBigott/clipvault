@@ -15,22 +15,22 @@ import (
 )
 
 type Item struct {
-	ID        int     `json:"id"`
-	URL       string  `json:"url"`
-	Tipo      string  `json:"tipo"`    // video | audio
-	Calidad   string  `json:"calidad"` // max | 1080 | 720 | 480 | compat
-	Titulo    string  `json:"titulo"`
-	Miniatura string  `json:"miniatura"`
-	Estado    string  `json:"estado"` // cola | descargando | procesando | listo | error | cancelado
-	Fase      string  `json:"fase"`
-	Progreso  float64 `json:"progreso"` // 0..1
-	Velocidad string  `json:"velocidad"`
-	Restante  string  `json:"restante"`
-	Tamano    string  `json:"tamano"`
-	Archivo   string  `json:"archivo"`
-	Error     string  `json:"error"`
-	Lista     int     `json:"lista"`
-	Indice    int     `json:"indice"`
+	ID        int      `json:"id"`
+	URL       string   `json:"url"`
+	Tipo      string   `json:"tipo"`    // video | audio
+	Calidad   string   `json:"calidad"` // max | 1080 | 720 | 480 | compat
+	Titulo    string   `json:"titulo"`
+	Miniatura string   `json:"miniatura"`
+	Estado    string   `json:"estado"`   // cola | descargando | procesando | listo | error | cancelado
+	Fase      string   `json:"fase"`     // clave de web/i18n.js (fase.*)
+	Progreso  float64  `json:"progreso"` // 0..1
+	Velocidad string   `json:"velocidad"`
+	Restante  string   `json:"restante"`
+	Tamano    string   `json:"tamano"`
+	Archivo   string   `json:"archivo"`
+	Error     *Mensaje `json:"error"`
+	Lista     int      `json:"lista"`
+	Indice    int      `json:"indice"`
 	// Clip: tramo en segundos; ClipHasta == 0 significa el video completo.
 	ClipDesde float64 `json:"clipDesde"`
 	ClipHasta float64 `json:"clipHasta"`
@@ -111,7 +111,7 @@ func (q *Queue) Reintentar(id int) {
 	q.mu.Lock()
 	it := q.buscar(id)
 	if it != nil && (it.Estado == "error" || it.Estado == "cancelado") {
-		it.Estado, it.Error, it.Progreso, it.Fase, it.Velocidad, it.Restante = "cola", "", 0, "", "", ""
+		it.Estado, it.Error, it.Progreso, it.Fase, it.Velocidad, it.Restante = "cola", nil, 0, "", "", ""
 	}
 	q.mu.Unlock()
 	q.despertar()
@@ -145,7 +145,7 @@ func (q *Queue) siguiente() *Item {
 	for _, it := range q.items {
 		if it.Estado == "cola" {
 			it.Estado = "descargando"
-			it.Fase = "Conectando"
+			it.Fase = "conectando"
 			return it
 		}
 	}
@@ -190,13 +190,13 @@ func (q *Queue) descargar(it *Item) {
 	y, ff := q.app.comp.Rutas()
 	if y == "" || ff == "" {
 		q.actualizar(it, func(i *Item) {
-			i.Estado, i.Error = "error", "Faltan componentes de descarga. Instálalos desde el panel izquierdo."
+			i.Estado, i.Error = "error", msj("faltanComponentes")
 		})
 		return
 	}
 	carpeta := q.app.config().Carpeta
 	if err := os.MkdirAll(carpeta, 0o755); err != nil {
-		q.actualizar(it, func(i *Item) { i.Estado, i.Error = "error", "No se puede escribir en la carpeta de destino." })
+		q.actualizar(it, func(i *Item) { i.Estado, i.Error = "error", msj("noEscribe") })
 		return
 	}
 
@@ -226,7 +226,7 @@ func (q *Queue) descargar(it *Item) {
 	stdout, _ := cmd.StdoutPipe()
 	stderr, _ := cmd.StderrPipe()
 	if err := cmd.Start(); err != nil {
-		q.actualizar(it, func(i *Item) { i.Estado, i.Error = "error", "No se pudo iniciar el motor de descarga." })
+		q.actualizar(it, func(i *Item) { i.Estado, i.Error = "error", msj("noIniciaMotor") })
 		return
 	}
 	alCancelar(ctx, cmd)
@@ -259,7 +259,7 @@ func (q *Queue) descargar(it *Item) {
 	}
 	if err != nil {
 		it.Estado, it.Fase, it.Velocidad, it.Restante = "error", "", "", ""
-		it.Error = mensajeYtdlp(errTexto.String(), "La descarga falló. Revisa el enlace o actualiza el motor.")
+		it.Error = mensajeYtdlp(errTexto.String(), msj("descargaFallo"))
 		log.Println("descarga", it.URL, err, errTexto.String())
 		return
 	}
@@ -286,15 +286,15 @@ func (q *Queue) procesarLinea(it *Item, l string) {
 	fase := ""
 	switch {
 	case strings.HasPrefix(l, "[Merger]"):
-		fase = "Uniendo video y audio"
+		fase = "uniendo"
 	case strings.HasPrefix(l, "[ExtractAudio]"):
-		fase = "Convirtiendo a MP3"
+		fase = "mp3"
 	case strings.HasPrefix(l, "[EmbedThumbnail]"):
-		fase = "Agregando portada"
+		fase = "portada"
 	case strings.HasPrefix(l, "[Metadata]"):
-		fase = "Agregando metadatos"
+		fase = "metadatos"
 	case strings.HasPrefix(l, "[FixupM3u8]"), strings.HasPrefix(l, "[VideoConvertor]"), strings.HasPrefix(l, "[VideoRemuxer]"):
-		fase = "Procesando"
+		fase = "procesando"
 	}
 	if fase != "" {
 		q.actualizar(it, func(i *Item) {
@@ -341,9 +341,9 @@ func (q *Queue) procesarProgreso(it *Item, datos string) {
 	vcodec, acodec := campos[6], campos[7]
 	idx, _ := strconv.Atoi(strings.TrimSpace(campos[8]))
 	titulo := campos[9]
-	fase := "Descargando video"
+	fase := "video"
 	if it.Tipo == "audio" || (vcodec == "none" && acodec != "none") {
-		fase = "Descargando audio"
+		fase = "audio"
 	}
 	q.actualizar(it, func(i *Item) {
 		if i.Estado == "cancelado" {

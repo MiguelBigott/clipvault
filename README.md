@@ -6,7 +6,7 @@
 
 > Descargador de **video y audio** para Windows: pegas un enlace y obtienes el MP4 o el MP3 con su portada y metadatos, sin consola ni comandos.
 
-[![Versión](https://img.shields.io/badge/versión-v1.2.1-c8483a)](CHANGELOG.md)
+[![Versión](https://img.shields.io/badge/versión-v1.3.0-c8483a)](CHANGELOG.md)
 [![CI](https://github.com/MiguelBigott/clipvault/actions/workflows/ci.yml/badge.svg)](https://github.com/MiguelBigott/clipvault/actions/workflows/ci.yml)
 [![Go](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![Windows](https://img.shields.io/badge/Windows-10%20·%2011-0078D4)](#-instalación)
@@ -45,6 +45,7 @@
 - **Todo incluido**: el instalador trae el motor de descarga, FFmpeg y Deno; un botón actualiza el motor y otro repara los componentes si alguno se borra.
 - **Ventana propia**: ventana nativa de Windows (WebView2) con su icono nítido en la barra de tareas, sin barra de título del sistema.
 - **Parte de [Codex](https://github.com/MiguelBigott/codex)**: el launcher de la suite la instala, la actualiza y la abre.
+- **En tu idioma**: usa el idioma elegido en [Codex](https://github.com/MiguelBigott/codex) (8 idiomas) o, sin Codex, el del PC.
 
 ## 🧱 Stack
 

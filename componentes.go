@@ -4,13 +4,12 @@ import (
 	"archive/zip"
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -28,22 +27,22 @@ type Componentes struct {
 	ytdlp, ffmpeg string // rutas encontradas
 	versionYtdlp  string
 	tarea         string // "", "instalando", "actualizando"
-	tareaTexto    string
+	tareaTexto    string // clave de web/i18n.js (tarea.*)
 	tareaProgreso float64
-	mensaje       string
+	mensaje       *Mensaje
 	mensajeError  bool
 }
 
 type EstadoComponentes struct {
-	Ytdlp         string  `json:"ytdlp"`
-	Ffmpeg        string  `json:"ffmpeg"`
-	VersionYtdlp  string  `json:"versionYtdlp"`
-	Listo         bool    `json:"listo"`
-	Tarea         string  `json:"tarea"`
-	TareaTexto    string  `json:"tareaTexto"`
-	TareaProgreso float64 `json:"tareaProgreso"`
-	Mensaje       string  `json:"mensaje"`
-	MensajeError  bool    `json:"mensajeError"`
+	Ytdlp         string   `json:"ytdlp"`
+	Ffmpeg        string   `json:"ffmpeg"`
+	VersionYtdlp  string   `json:"versionYtdlp"`
+	Listo         bool     `json:"listo"`
+	Tarea         string   `json:"tarea"`
+	TareaTexto    string   `json:"tareaTexto"`
+	TareaProgreso float64  `json:"tareaProgreso"`
+	Mensaje       *Mensaje `json:"mensaje"`
+	MensajeError  bool     `json:"mensajeError"`
 }
 
 func NuevosComponentes(a *App) *Componentes {
@@ -120,7 +119,7 @@ func (c *Componentes) empezar(tarea, texto string) bool {
 	if c.tarea != "" {
 		return false
 	}
-	c.tarea, c.tareaTexto, c.tareaProgreso, c.mensaje, c.mensajeError = tarea, texto, 0, "", false
+	c.tarea, c.tareaTexto, c.tareaProgreso, c.mensaje, c.mensajeError = tarea, texto, 0, nil, false
 	return true
 }
 
@@ -130,7 +129,7 @@ func (c *Componentes) avance(texto string, p float64) {
 	c.mu.Unlock()
 }
 
-func (c *Componentes) terminar(msg string, esError bool) {
+func (c *Componentes) terminar(msg *Mensaje, esError bool) {
 	c.mu.Lock()
 	c.tarea, c.tareaTexto, c.tareaProgreso = "", "", 0
 	c.mensaje, c.mensajeError = msg, esError
@@ -151,7 +150,7 @@ type Vista struct {
 func (c *Componentes) VistaPrevia(ctx context.Context, url string) (Vista, error) {
 	y, _ := c.Rutas()
 	if y == "" {
-		return Vista{}, errors.New("Falta el motor de descarga. Instálalo desde el panel de componentes.")
+		return Vista{}, msj("faltaMotor")
 	}
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
@@ -161,7 +160,7 @@ func (c *Componentes) VistaPrevia(ctx context.Context, url string) (Vista, error
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()
 	if err != nil {
-		return Vista{}, errors.New(mensajeYtdlp(stderr.String(), "No se pudo leer ese enlace."))
+		return Vista{}, mensajeYtdlp(stderr.String(), msj("enlaceIlegible"))
 	}
 	var raw struct {
 		Type       string  `json:"_type"`
@@ -181,7 +180,7 @@ func (c *Componentes) VistaPrevia(ctx context.Context, url string) (Vista, error
 		Entries []json.RawMessage `json:"entries"`
 	}
 	if err := json.Unmarshal(out, &raw); err != nil {
-		return Vista{}, errors.New("El motor de descarga devolvió una respuesta que no se pudo leer.")
+		return Vista{}, msj("respuestaIlegible")
 	}
 	v := Vista{Titulo: raw.Title, Canal: raw.Channel, Duracion: raw.Duration, Miniatura: raw.Thumbnail, Altura: raw.Height}
 	if v.Canal == "" {
@@ -206,29 +205,30 @@ func (c *Componentes) VistaPrevia(ctx context.Context, url string) (Vista, error
 	return v, nil
 }
 
-// mensajeYtdlp extrae la última línea ERROR de yt-dlp en un texto legible.
-func mensajeYtdlp(stderr, porDefecto string) string {
+// mensajeYtdlp convierte la última línea ERROR de yt-dlp en un mensaje legible; las que no
+// conoce se muestran tal cual (vienen en inglés del motor).
+func mensajeYtdlp(stderr string, porDefecto *Mensaje) *Mensaje {
 	lineas := strings.Split(strings.TrimSpace(stderr), "\n")
 	for i := len(lineas) - 1; i >= 0; i-- {
 		l := strings.TrimSpace(lineas[i])
 		if strings.HasPrefix(l, "ERROR:") {
 			l = strings.TrimSpace(strings.TrimPrefix(l, "ERROR:"))
 			if strings.Contains(l, "is not a valid URL") || strings.Contains(l, "Unsupported URL") {
-				return "Ese enlace no es de un sitio compatible. Revisa que esté completo."
+				return msj("sitioNoCompatible")
 			}
 			if strings.Contains(l, "Private video") {
-				return "El video es privado."
+				return msj("videoPrivado")
 			}
 			if strings.Contains(l, "Video unavailable") {
-				return "El video no está disponible."
+				return msj("videoNoDisponible")
 			}
 			if strings.Contains(l, "Sign in to confirm") {
-				return "El sitio pide iniciar sesión para ver este video."
+				return msj("pideSesion")
 			}
 			if len(l) > 220 {
 				l = l[:220] + "…"
 			}
-			return l
+			return msj("motorDijo", "detalle", l)
 		}
 	}
 	return porDefecto
@@ -237,7 +237,7 @@ func mensajeYtdlp(stderr, porDefecto string) string {
 // ---------- Instalar / actualizar ----------
 
 func (c *Componentes) InstalarEnSegundoPlano() {
-	if !c.empezar("instalando", "Preparando la descarga de componentes") {
+	if !c.empezar("instalando", "preparando") {
 		return
 	}
 	go func() {
@@ -245,10 +245,10 @@ func (c *Componentes) InstalarEnSegundoPlano() {
 		c.Refrescar()
 		if err != nil {
 			log.Println("instalar:", err)
-			c.terminar("No se pudieron instalar los componentes: "+err.Error(), true)
+			c.terminar(msj("componentesFallo").conCausa(err), true)
 			return
 		}
-		c.terminar("Componentes instalados. El espíritu-máquina está listo.", false)
+		c.terminar(msj("componentesListos"), false)
 	}()
 }
 
@@ -259,26 +259,26 @@ func (c *Componentes) instalar() error {
 	}
 	y, f := c.Rutas()
 	if y == "" {
-		c.avance("Descargando el motor", 0)
+		c.avance("motor", 0)
 		if err := descargarArchivo(urlYtdlp, filepath.Join(dir, "yt-dlp.exe"), func(p float64) {
-			c.avance("Descargando el motor", p)
+			c.avance("motor", p)
 		}); err != nil {
-			return fmt.Errorf("motor de descarga: %w", err)
+			return err
 		}
 	}
 	if f == "" {
 		zipPath := filepath.Join(dir, "ffmpeg.zip")
-		c.avance("Descargando ffmpeg (unos 100 MB)", 0)
+		c.avance("ffmpeg", 0)
 		if err := descargarArchivo(urlFfmpeg, zipPath, func(p float64) {
-			c.avance("Descargando ffmpeg (unos 100 MB)", p)
+			c.avance("ffmpeg", p)
 		}); err != nil {
-			return fmt.Errorf("ffmpeg: %w", err)
+			return err
 		}
-		c.avance("Extrayendo ffmpeg", 1)
+		c.avance("extrayendo", 1)
 		err := extraerFfmpeg(zipPath, dir)
 		_ = os.Remove(zipPath)
 		if err != nil {
-			return fmt.Errorf("ffmpeg: %w", err)
+			return err
 		}
 	}
 	return nil
@@ -288,11 +288,11 @@ func descargarArchivo(url, destino string, progreso func(float64)) error {
 	cli := &http.Client{Timeout: 30 * time.Minute}
 	resp, err := cli.Get(url)
 	if err != nil {
-		return errors.New("sin conexión con el servidor de descargas")
+		return msj("sinConexionDescargas")
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("el servidor respondió %d", resp.StatusCode)
+		return msj("servidorRespondio", "codigo", strconv.Itoa(resp.StatusCode))
 	}
 	tmp := destino + ".part"
 	out, err := os.Create(tmp)
@@ -321,7 +321,7 @@ func descargarArchivo(url, destino string, progreso func(float64)) error {
 		}
 		if rerr != nil {
 			out.Close()
-			return errors.New("la descarga se cortó")
+			return msj("descargaCortada")
 		}
 	}
 	out.Close()
@@ -360,13 +360,13 @@ func extraerFfmpeg(zipPath, dir string) error {
 		encontrados++
 	}
 	if encontrados < 2 {
-		return errors.New("el archivo descargado no traía ffmpeg.exe y ffprobe.exe")
+		return msj("zipSinFfmpeg")
 	}
 	return nil
 }
 
 func (c *Componentes) ActualizarEnSegundoPlano() {
-	if !c.empezar("actualizando", "Ejecutando el Rito de Actualización") {
+	if !c.empezar("actualizando", "rito") {
 		return
 	}
 	go func() {
@@ -374,7 +374,7 @@ func (c *Componentes) ActualizarEnSegundoPlano() {
 		y, _ := c.Rutas()
 		var err error
 		if y == "" {
-			err = errors.New("falta el motor de descarga")
+			err = msj("faltaMotor")
 		} else {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 			var out strings.Builder
@@ -385,22 +385,22 @@ func (c *Componentes) ActualizarEnSegundoPlano() {
 			log.Println("yt-dlp -U:", out.String())
 			if err != nil {
 				// Algunas variantes de yt-dlp no se actualizan solas: bajamos el .exe oficial.
-				c.avance("Descargando la versión más reciente", 0)
+				c.avance("reciente", 0)
 				err = descargarArchivo(urlYtdlp, y, func(p float64) {
-					c.avance("Descargando la versión más reciente", p)
+					c.avance("reciente", p)
 				})
 			}
 		}
 		c.Refrescar()
 		if err != nil {
-			c.terminar("No se pudo actualizar el motor: "+err.Error(), true)
+			c.terminar(msj("motorFallo").conCausa(err), true)
 			return
 		}
 		despues := c.Estado().VersionYtdlp
 		if despues == antes {
-			c.terminar("El motor ya estaba en la versión más reciente ("+despues+").", false)
+			c.terminar(msj("motorAlDia", "version", despues), false)
 		} else {
-			c.terminar("El espíritu-máquina ha sido renovado (versión "+despues+").", false)
+			c.terminar(msj("motorRenovado", "version", despues), false)
 		}
 	}()
 }

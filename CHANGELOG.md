@@ -3,6 +3,11 @@
 Todas las versiones siguen [Versionado Semántico](https://semver.org/lang/es/). Cada una tiene su
 etiqueta `vX.Y.Z` y su página en [Releases](../../releases).
 
+## [1.3.0] - 2026-10-19
+
+### Añadido
+- ClipVault se muestra en el idioma elegido en Codex: español, inglés, francés, alemán, ruso, portugués, chino o japonés. Si Codex está en automático o no está instalado, usa el idioma del PC (si no es ninguno de esos, inglés). Si cambias el idioma en Codex con ClipVault abierta, cambia sola.
+
 ## [1.2.1] - 2026-10-19
 
 ### Cambiado
