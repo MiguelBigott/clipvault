@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="build/logo.png" alt="Logo de Clipvault" width="88">
+<img src="build/logo.png" alt="Logo de ClipVault" width="88">
 
-# Clipvault
+# ClipVault
 
 > Descargador de **video y audio** para Windows: pegas un enlace y obtienes el MP4 o el MP3 con su portada y metadatos, sin consola ni comandos.
 
-[![Versión](https://img.shields.io/badge/versión-v1.1.0-c8483a)](CHANGELOG.md)
+[![Versión](https://img.shields.io/badge/versión-v1.2.0-c8483a)](CHANGELOG.md)
 [![CI](https://github.com/MiguelBigott/clipvault/actions/workflows/ci.yml/badge.svg)](https://github.com/MiguelBigott/clipvault/actions/workflows/ci.yml)
 [![Go](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![Windows](https://img.shields.io/badge/Windows-10%20·%2011-0078D4)](#-instalación)
@@ -57,11 +57,11 @@
 
 ## 📦 Instalación
 
-Descarga `Clipvault-Setup-<versión>.exe` desde [Releases](../../releases/latest), o instálalo desde [Codex](https://github.com/MiguelBigott/codex).
+Descarga `ClipVault-Setup-<versión>.exe` desde [Releases](../../releases/latest), o instálalo desde [Codex](https://github.com/MiguelBigott/codex).
 
-- Se instala en `C:\Program Files\Clipvault` (desde Codex, en `C:\Program Files\Codex\Clipvault`) con el motor de descarga, FFmpeg y Deno en `componentes`.
-- Las descargas van por defecto a `Videos\Clipvault`; se puede cambiar desde la app.
-- La configuración se guarda en `%LOCALAPPDATA%\Clipvault`.
+- Se instala en `C:\Program Files\ClipVault` (desde Codex, en `C:\Program Files\Codex\ClipVault`) con el motor de descarga, FFmpeg y Deno en `componentes`.
+- Las descargas van por defecto a `Videos\ClipVault`; se puede cambiar desde la app.
+- La configuración se guarda en `%LOCALAPPDATA%\ClipVault`.
 - Al desinstalar se borran el programa, los componentes y la configuración; **tus videos no se tocan**.
 
 ## 🛠️ Compilar
@@ -73,7 +73,7 @@ Requisitos: [Go](https://go.dev/dl), [NSIS](https://nsis.sourceforge.io) y go-wi
 .\build\compilar.ps1
 ```
 
-Genera `dist/Clipvault.exe`, `dist/componentes/` y `dist/Clipvault-Setup-<versión>.exe`. La primera vez baja
+Genera `dist/ClipVault.exe`, `dist/componentes/` y `dist/ClipVault-Setup-<versión>.exe`. La primera vez baja
 los componentes de sus repositorios oficiales, los verifica con SHA-256 y los guarda en `build/componentes/`
 (fuera de git); para bajar versiones nuevas: `.\build\compilar.ps1 -ActualizarComponentes`.
 

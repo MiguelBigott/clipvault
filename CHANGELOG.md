@@ -3,6 +3,12 @@
 Todas las versiones siguen [Versionado Semántico](https://semver.org/lang/es/). Cada una tiene su
 etiqueta `vX.Y.Z` y su página en [Releases](../../releases).
 
+## [1.2.0] - 2026-10-19
+
+### Cambiado
+- La app se llama **ClipVault** (con V mayúscula): ventana, instalador, ejecutable y textos.
+- La carpeta de descargas se llama igual que la app: `Videos\ClipVault`. Si ya existía como `Videos\Clipvault`, se corrigen sus mayúsculas sin mover nada, y la ruta guardada se actualiza sola.
+
 ## [1.1.0] - 2026-10-18
 
 ### Cambiado
@@ -32,6 +38,7 @@ parte de ese código.
 - Campo de enlace único: al pulsar Descargar el enlace pasa a la bóveda y el campo queda vacío para el siguiente.
 - Forma parte de la suite [Codex](https://github.com/MiguelBigott/codex), que puede instalarla, actualizarla y abrirla.
 
+[1.2.0]: https://github.com/MiguelBigott/clipvault/releases/tag/v1.2.0
 [1.1.0]: https://github.com/MiguelBigott/clipvault/releases/tag/v1.1.0
 [1.0.1]: https://github.com/MiguelBigott/clipvault/releases/tag/v1.0.1
 [1.0.0]: https://github.com/MiguelBigott/clipvault/releases/tag/v1.0.0

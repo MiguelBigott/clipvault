@@ -1,4 +1,4 @@
-"""Logo de Clipvault «Cofre», en el estilo del códice de Codex: un cofre de pergamino con
+"""Logo de ClipVault «Cofre», en el estilo del códice de Codex: un cofre de pergamino con
 correas y cerradura de oro, un ▶ de tinta en la cerradura y el marcapáginas rojo de la rúbrica.
 
     python build/generar_logo.py
@@ -84,7 +84,7 @@ body {{ display: flex; flex-direction: column; align-items: center; color: {PERG
 img {{ width: 200px; height: 200px; margin-top: 150px; }}
 h1 {{ margin: 30px 0 0; font-family: Titulo; font-weight: 600; font-size: 46px; letter-spacing: -.03em; }}
 h1 span {{ color: {RUBRICA}; }}
-</style></head><body><img src="file:///{logo_png.replace(os.sep, "/")}"><h1>Clip<span>vault</span></h1></body></html>''', 328, 628, png)
+</style></head><body><img src="file:///{logo_png.replace(os.sep, "/")}"><h1>Clip<span>Vault</span></h1></body></html>''', 328, 628, png)
         Image.open(png).convert("RGB").save(destino, format="BMP")
 
 

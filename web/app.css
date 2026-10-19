@@ -5,7 +5,7 @@
 @font-face { font-family: "Space Mono"; src: url("fonts/space-mono-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: block; }
 
 /* Skin «Cofre»: hermano de Codex «Nítido». Gris neutro, líneas continuas y visibles, nombres en
-   Inter, etiquetas en minúsculas monoespaciadas y el rojo de Clipvault como único acento. */
+   Inter, etiquetas en minúsculas monoespaciadas y el rojo de ClipVault como único acento. */
 :root {
   --fondo: #131418;
   --panel: #17191d;

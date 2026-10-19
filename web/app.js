@@ -398,7 +398,7 @@ function pintarCola(cola) {
   $("#cuenta").textContent = cola.length ? `${cola.length} descarga${cola.length === 1 ? "" : "s"}` : "";
   $("#btn-limpiar").hidden = !cola.some((it) => ["listo", "error", "cancelado"].includes(it.estado));
   const pendientes = cola.filter((it) => ["cola", "descargando", "procesando"].includes(it.estado)).length;
-  document.title = pendientes ? `Clipvault (${pendientes})` : "Clipvault";
+  document.title = pendientes ? `ClipVault (${pendientes})` : "ClipVault";
 }
 
 $("#btn-limpiar").addEventListener("click", () => api("/api/limpiar", {}).then(refrescar));
@@ -427,7 +427,7 @@ function pintarComponentes(c) {
     const faltan = [!c.ytdlp && "el motor de descarga", !c.ffmpeg && "FFmpeg"].filter(Boolean);
     const peso = c.ffmpeg ? "unos 20 MB" : "unos 100 MB";
     $("#faltan-texto").textContent =
-      `${faltan.length > 1 ? "Faltan" : "Falta"} ${faltan.join(" y ")} para descargar. Usa «Reparar componentes» para volver a bajar ${faltan.length > 1 ? "los dos" : "lo que falta"} a la carpeta de Clipvault (${peso}).`;
+      `${faltan.length > 1 ? "Faltan" : "Falta"} ${faltan.join(" y ")} para descargar. Usa «Reparar componentes» para volver a bajar ${faltan.length > 1 ? "los dos" : "lo que falta"} a la carpeta de ClipVault (${peso}).`;
   }
   $("#motor-listo").hidden = !c.ytdlp || ocupado;
 
@@ -472,7 +472,7 @@ async function refrescar() {
     pintarConfig(e.config, primera);
     pintarComponentes(e.componentes);
     pintarCola(e.cola);
-    if (primera) $("#version").textContent = `Clipvault ${e.version} · de la biblioteca Codex`;
+    if (primera) $("#version").textContent = `ClipVault ${e.version} · de la biblioteca Codex`;
     primera = false;
   } catch {
     /* el servidor puede estar cerrándose */

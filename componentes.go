@@ -53,7 +53,7 @@ func NuevosComponentes(a *App) *Componentes {
 }
 
 // carpeta es donde viven los componentes: "componentes" junto al .exe de la app
-// (C:\Program Files\Clipvault\componentes). El instalador los deja ahí.
+// (C:\Program Files\ClipVault\componentes). El instalador los deja ahí.
 func (c *Componentes) carpeta() string {
 	ex, err := os.Executable()
 	if err != nil {

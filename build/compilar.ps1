@@ -1,4 +1,4 @@
-# Compila Clipvault.exe y el instalador en dist\.
+# Compila ClipVault.exe y el instalador en dist\.
 # Requiere: Go, NSIS (makensis) y go-winres (go install github.com/tc-hib/go-winres@latest).
 #
 # Los componentes de descarga se bajan de sus fuentes oficiales, se verifican con
@@ -17,7 +17,7 @@ if (-not $goExe) { $goExe = 'C:\Program Files\Go\bin\go.exe' }
 $winres = Join-Path (& $goExe env GOPATH) 'bin\go-winres.exe'
 $makensis = 'C:\Program Files (x86)\NSIS\makensis.exe'
 
-Write-Host "Clipvault $version"
+Write-Host "ClipVault $version"
 
 # ---------- Componentes de descarga ----------
 $motorUrl = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download'
@@ -84,13 +84,13 @@ Write-Host "Componentes: motor $verMotor + FFmpeg + $verDeno"
 # Icono, manifiesto y datos de versión dentro del .exe
 & $winres simply --arch amd64 --out rsrc --manifest gui `
     --icon build\app.ico `
-    --product-name Clipvault --file-description 'Clipvault - descargador de video y audio' `
+    --product-name ClipVault --file-description 'ClipVault - descargador de video y audio' `
     --product-version $version --file-version $version `
-    --original-filename Clipvault.exe --copyright Clipvault
+    --original-filename ClipVault.exe --copyright ClipVault
 if ($LASTEXITCODE) { throw 'go-winres falló' }
 
 New-Item -ItemType Directory -Force dist | Out-Null
-& $goExe build -trimpath -ldflags '-H windowsgui -s -w' -o dist\Clipvault.exe .
+& $goExe build -trimpath -ldflags '-H windowsgui -s -w' -o dist\ClipVault.exe .
 if ($LASTEXITCODE) { throw 'go build falló' }
 
 # La app busca los componentes en la carpeta "componentes" junto a su .exe.

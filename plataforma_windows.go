@@ -47,15 +47,15 @@ func alCancelar(ctx context.Context, cmd *exec.Cmd) {}
 
 func carpetaDatos() string {
 	if d := os.Getenv("LOCALAPPDATA"); d != "" {
-		return filepath.Join(d, "Clipvault")
+		return filepath.Join(d, "ClipVault")
 	}
 	d, _ := os.UserConfigDir()
-	return filepath.Join(d, "Clipvault")
+	return filepath.Join(d, "ClipVault")
 }
 
-const nombreCarpetaDescargas = "Clipvault"
+const nombreCarpetaDescargas = "ClipVault"
 
-// carpetaDescargasPorDefecto devuelve "Clipvault" dentro de la carpeta
+// carpetaDescargasPorDefecto devuelve "ClipVault" dentro de la carpeta
 // Videos del usuario (respeta si la movió a otro disco).
 func carpetaDescargasPorDefecto() string {
 	if v := carpetaVideos(); v != "" {

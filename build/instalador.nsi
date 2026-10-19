@@ -8,14 +8,14 @@ SetCompressor /SOLID lzma
 !ifndef VERSION
   !define VERSION "0.0.0"
 !endif
-!define APP "Clipvault"
-!define EXE "Clipvault.exe"
+!define APP "ClipVault"
+!define EXE "ClipVault.exe"
 !define REGAPP "Software\${APP}"
 !define UNINST "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP}"
 
 Name "${APP}"
-OutFile "..\dist\Clipvault-Setup-${VERSION}.exe"
-; Por defecto en C:\Program Files\Clipvault. Codex lo instala en C:\Program Files\Codex\Clipvault (/D=).
+OutFile "..\dist\ClipVault-Setup-${VERSION}.exe"
+; Por defecto en C:\Program Files\ClipVault. Codex lo instala en C:\Program Files\Codex\ClipVault (/D=).
 InstallDir "$PROGRAMFILES64\${APP}"
 RequestExecutionLevel admin
 ; Nítido con la escala de pantalla de Windows (125 %, 150 %...).
@@ -37,7 +37,7 @@ VIAddVersionKey /LANG=1034 "LegalCopyright" "${APP}"
 !define MUI_ABORTWARNING
 
 !define MUI_WELCOMEPAGE_TITLE "Instalar ${APP}"
-!define MUI_WELCOMEPAGE_TEXT "Descargador de video y audio.$\r$\n$\r$\nSe instala con todo lo necesario para descargar. Tus descargas se guardarán en Videos\Clipvault (puedes cambiarlo desde la app)."
+!define MUI_WELCOMEPAGE_TEXT "Descargador de video y audio.$\r$\n$\r$\nSe instala con todo lo necesario para descargar. Tus descargas se guardarán en Videos\ClipVault (puedes cambiarlo desde la app)."
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_INSTFILES
 

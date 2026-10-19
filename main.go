@@ -1,4 +1,4 @@
-// Clipvault — descargador de video y audio.
+// ClipVault — descargador de video y audio.
 // Servidor local + interfaz web embebida en una ventana nativa (WebView2).
 package main
 
@@ -13,13 +13,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
 	webview2 "github.com/jchv/go-webview2"
 )
 
-const Version = "1.1.0"
+const Version = "1.2.0"
 
 // Puerto fijo: sirve también para detectar si la app ya está abierta.
 const puerto = "127.0.0.1:47830"
@@ -46,6 +47,7 @@ type Config struct {
 
 func main() {
 	dataDir := carpetaDatos()
+	corregirMayusculas(dataDir)
 	_ = os.MkdirAll(dataDir, 0o755)
 	logFile, err := os.OpenFile(filepath.Join(dataDir, "clipvault.log"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
 	if err == nil {
@@ -90,8 +92,8 @@ func main() {
 		},
 	})
 	if w == nil {
-		mensaje("Clipvault necesita Microsoft Edge WebView2, que viene con Windows 11. " +
-			"Instálalo desde https://developer.microsoft.com/microsoft-edge/webview2/ y vuelve a abrir Clipvault.")
+		mensaje("ClipVault necesita Microsoft Edge WebView2, que viene con Windows 11. " +
+			"Instálalo desde https://developer.microsoft.com/microsoft-edge/webview2/ y vuelve a abrir ClipVault.")
 		return
 	}
 	defer w.Destroy()
@@ -118,6 +120,12 @@ func (a *App) cargarConfig() {
 	}
 	if a.cfg.Carpeta == "" {
 		a.cfg.Carpeta = carpetaDescargasPorDefecto()
+	}
+	// Desde la 1.2.0 la carpeta se llama como la app («ClipVault»): se corrige la ruta guardada
+	// y las mayúsculas de la carpeta si ya existía.
+	if def := carpetaDescargasPorDefecto(); strings.EqualFold(a.cfg.Carpeta, def) {
+		a.cfg.Carpeta = def
+		corregirMayusculas(def)
 	}
 }
 
