@@ -84,6 +84,9 @@ Function CrearAccesoEscritorio
 FunctionEnd
 
 Section "Instalar"
+  ; ¿Ya estaba instalada? (antes de reescribir el registro)
+  ReadRegStr $R9 HKLM "${REGAPP}" "InstallDir"
+
   ; Cierra la app si estaba abierta para poder reemplazarla.
   nsExec::Exec 'taskkill /IM "${EXE}" /F'
   Sleep 500
@@ -103,6 +106,14 @@ Section "Instalar"
 
   WriteUninstaller "$INSTDIR\Desinstalar.exe"
   CreateShortcut "$SMPROGRAMS\${APP}.lnk" "$INSTDIR\${EXE}"
+
+  ; Codex instala en silencio y la página final (con la casilla del acceso directo) no
+  ; aparece: en la primera instalación el acceso directo del escritorio se crea igual. Las
+  ; actualizaciones no lo vuelven a crear si lo borraste.
+  ${If} ${Silent}
+  ${AndIf} $R9 == ""
+    Call CrearAccesoEscritorio
+  ${EndIf}
 
   WriteRegStr HKLM "${REGAPP}" "InstallDir" "$INSTDIR"
   WriteRegStr HKLM "${UNINST}" "DisplayName" "${APP}"

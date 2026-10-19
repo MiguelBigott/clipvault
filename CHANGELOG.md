@@ -3,6 +3,11 @@
 Todas las versiones siguen [Versionado Semántico](https://semver.org/lang/es/). Cada una tiene su
 etiqueta `vX.Y.Z` y su página en [Releases](../../releases).
 
+## [1.3.1] - 2026-10-19
+
+### Corregido
+- Al instalarla desde Codex no se creaba el acceso directo del escritorio (Codex instala en silencio y la casilla no aparecía). Ahora se crea en la primera instalación; las actualizaciones no lo vuelven a crear si lo borraste.
+
 ## [1.3.0] - 2026-10-19
 
 ### Añadido
