@@ -6,10 +6,11 @@
 
 > Descargador de **video y audio** para Windows: pegas un enlace y obtienes el MP4 o el MP3 con su portada y metadatos, sin consola ni comandos.
 
-[![Versión](https://img.shields.io/badge/versión-v1.2.0-c8483a)](CHANGELOG.md)
+[![Versión](https://img.shields.io/badge/versión-v1.2.1-c8483a)](CHANGELOG.md)
 [![CI](https://github.com/MiguelBigott/clipvault/actions/workflows/ci.yml/badge.svg)](https://github.com/MiguelBigott/clipvault/actions/workflows/ci.yml)
 [![Go](https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![Windows](https://img.shields.io/badge/Windows-10%20·%2011-0078D4)](#-instalación)
+[![Licencia](https://img.shields.io/badge/licencia-MIT-3f9d6e)](LICENSE)
 [![FFmpeg](https://img.shields.io/badge/motor-FFmpeg-007808?logo=ffmpeg&logoColor=white)](https://ffmpeg.org)
 [![Codex](https://img.shields.io/badge/suite-Codex-c9a45c)](https://github.com/MiguelBigott/codex)
 
@@ -30,6 +31,7 @@
 - [Instalación](#-instalación)
 - [Compilar](#️-compilar)
 - [Seguridad](#-seguridad)
+- [Licencia](#️-licencia)
 - [Créditos](#️-créditos)
 
 ## ✨ Funciones
@@ -93,6 +95,12 @@ Para revisar la interfaz en un navegador, sin ventana, ejecuta la app con `CLIPV
 - La API rechaza peticiones con un origen distinto al de la propia app y las acciones exigen una cabecera propia, así que una página web abierta en el navegador no puede usarla.
 - Los componentes que trae el instalador se bajan al compilar **solo desde sus repositorios oficiales** y se verifican con la suma **SHA-256** que publica cada proyecto.
 - La carpeta `componentes` es modificable por los usuarios del equipo para actualizar el motor sin permisos de administrador; el resto de la instalación queda protegido.
+
+## ⚖️ Licencia
+
+**Creado por [Miguel Bigott](https://github.com/MiguelBigott)** y publicado con licencia [MIT](LICENSE): cualquiera puede usarlo, copiarlo, modificarlo y compartirlo libremente, también en sus propios proyectos, siempre que mantenga el aviso de autor. Se entrega tal cual, sin garantías.
+
+Los componentes de terceros conservan sus licencias: FFmpeg (GPL 3, con dónde conseguir su código en `componentes/FUENTES-FFmpeg.txt`), Deno (MIT) y el motor de descarga (dominio público) traen las suyas en `componentes/`, y lo que va dentro de ClipVault.exe (Go, go-webview2 y las tipografías) está en `LICENCIAS-TERCEROS.txt`, junto a la app.
 
 ## 🖋️ Créditos
 

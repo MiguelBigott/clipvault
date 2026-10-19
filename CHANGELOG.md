@@ -3,6 +3,15 @@
 Todas las versiones siguen [Versionado Semántico](https://semver.org/lang/es/). Cada una tiene su
 etiqueta `vX.Y.Z` y su página en [Releases](../../releases).
 
+## [1.2.1] - 2026-10-19
+
+### Cambiado
+- Licencia MIT a nombre de Miguel Bigott: el código es de uso libre manteniendo el aviso de autor. El instalador deja la licencia y las de terceros (`LICENCIAS-TERCEROS.txt`) junto a la app, y el instalador y el .exe dicen «© 2026 Miguel Bigott».
+- La carpeta `componentes` trae también las licencias de Deno y del motor de descarga, y dónde conseguir el código de FFmpeg.
+
+### Corregido
+- Las tildes del instalador se veían rotas (por ejemplo «tambiÃ©n»).
+
 ## [1.2.0] - 2026-10-19
 
 ### Cambiado

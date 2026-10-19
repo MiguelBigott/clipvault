@@ -26,7 +26,8 @@ VIAddVersionKey /LANG=1034 "ProductName" "${APP}"
 VIAddVersionKey /LANG=1034 "FileDescription" "Instalador de ${APP}"
 VIAddVersionKey /LANG=1034 "FileVersion" "${VERSION}"
 VIAddVersionKey /LANG=1034 "ProductVersion" "${VERSION}"
-VIAddVersionKey /LANG=1034 "LegalCopyright" "${APP}"
+VIAddVersionKey /LANG=1034 "LegalCopyright" "© 2026 Miguel Bigott"
+VIAddVersionKey /LANG=1034 "CompanyName" "Miguel Bigott"
 
 !define MUI_ICON "app.ico"
 !define MUI_UNICON "app.ico"
@@ -89,6 +90,9 @@ Section "Instalar"
 
   SetOutPath "$INSTDIR"
   File "..\dist\${EXE}"
+  ; Licencia MIT de la app y las de terceros que van dentro del .exe.
+  File "..\dist\LICENSE.txt"
+  File "..\dist\LICENCIAS-TERCEROS.txt"
 
   ; Componentes de descarga (motor, FFmpeg y Deno). Los usuarios pueden modificarlos para
   ; que la app actualice el motor sin pedir permisos de administrador.
@@ -103,7 +107,7 @@ Section "Instalar"
   WriteRegStr HKLM "${REGAPP}" "InstallDir" "$INSTDIR"
   WriteRegStr HKLM "${UNINST}" "DisplayName" "${APP}"
   WriteRegStr HKLM "${UNINST}" "DisplayVersion" "${VERSION}"
-  WriteRegStr HKLM "${UNINST}" "Publisher" "${APP}"
+  WriteRegStr HKLM "${UNINST}" "Publisher" "Miguel Bigott"
   WriteRegStr HKLM "${UNINST}" "DisplayIcon" "$INSTDIR\${EXE}"
   WriteRegStr HKLM "${UNINST}" "InstallLocation" "$INSTDIR"
   WriteRegStr HKLM "${UNINST}" "UninstallString" '"$INSTDIR\Desinstalar.exe"'
@@ -120,6 +124,8 @@ Section "Uninstall"
   Sleep 500
   Delete "$INSTDIR\${EXE}"
   Delete "$INSTDIR\Desinstalar.exe"
+  Delete "$INSTDIR\LICENSE.txt"
+  Delete "$INSTDIR\LICENCIAS-TERCEROS.txt"
   RMDir /r "$INSTDIR\componentes"
   RMDir "$INSTDIR"
   Delete "$SMPROGRAMS\${APP}.lnk"

@@ -1,0 +1,6 @@
+FFmpeg (ffmpeg.exe, ffprobe.exe y sus DLL)
+Compilación «win64-gpl-shared» de https://github.com/yt-dlp/FFmpeg-Builds, sin modificar.
+Licencia: GNU GPL versión 3 (ver LICENSE-FFmpeg.txt).
+Código fuente: https://github.com/FFmpeg/FFmpeg y los scripts de compilación en
+https://github.com/yt-dlp/FFmpeg-Builds. Si no puedes obtenerlo desde ahí, escribe a
+https://github.com/MiguelBigott/clipvault/issues y se te enviará.
