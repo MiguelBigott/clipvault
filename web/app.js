@@ -3,7 +3,7 @@
 const $ = (s) => document.querySelector(s);
 
 async function api(ruta, datos) {
-  const opciones = { headers: { "X-Clipvault": "1" } };
+  const opciones = { headers: {  } };
   if (datos !== undefined) {
     opciones.method = "POST";
     opciones.headers["Content-Type"] = "application/json";

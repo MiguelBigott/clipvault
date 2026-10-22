@@ -97,11 +97,14 @@ Section "Instalar"
   File "..\dist\LICENSE.txt"
   File "..\dist\LICENCIAS-TERCEROS.txt"
 
-  ; Componentes de descarga (motor, FFmpeg y Deno). Los usuarios pueden modificarlos para
-  ; que la app actualice el motor sin pedir permisos de administrador.
+  ; Componentes base de descarga (motor, FFmpeg y Deno), instalados como archivos protegidos.
+  ; Las actualizaciones se guardan en el directorio de datos del usuario.
   SetOutPath "$INSTDIR\componentes"
   File "..\dist\componentes\*.*"
-  nsExec::Exec 'icacls "$INSTDIR\componentes" /grant *S-1-5-32-545:(OI)(CI)M /T /Q'
+  ExecWait '"$SYSDIR\icacls.exe" "$INSTDIR\componentes" /reset /T /Q' $0
+  ${If} $0 != 0
+    Abort "No se pudieron restablecer los permisos seguros de los componentes."
+  ${EndIf}
   SetOutPath "$INSTDIR"
 
   WriteUninstaller "$INSTDIR\Desinstalar.exe"

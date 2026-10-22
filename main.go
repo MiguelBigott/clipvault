@@ -19,7 +19,7 @@ import (
 	webview2 "github.com/jchv/go-webview2"
 )
 
-const Version = "1.3.1"
+const Version = "1.3.2"
 
 // Puerto fijo: sirve también para detectar si la app ya está abierta.
 const puerto = "127.0.0.1:47830"
@@ -71,7 +71,8 @@ func main() {
 	app.rutas(mux)
 
 	go func() {
-		if err := http.Serve(ln, mux); err != nil {
+		server := &http.Server{Handler: seguridadHTTP(mux), ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20}
+		if err := server.Serve(ln); err != nil {
 			log.Println("servidor:", err)
 		}
 	}()
@@ -163,19 +164,31 @@ func leerJSON(r *http.Request, v any) error {
 	return nil
 }
 
-// Solo aceptamos peticiones de la propia interfaz (evita que otras webs usen la API).
+// Solo acepta la interfaz local y exige Origin exacto en todas las operaciones que cambian estado.
 func soloLocal(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if o := r.Header.Get("Origin"); o != "" && o != "http://"+puerto {
+		if r.Host != puerto {
 			fallar(w, http.StatusForbidden, msj("accesoDenegado"))
 			return
 		}
-		if r.Method == http.MethodPost && r.Header.Get("X-Clipvault") != "1" {
+		origen := r.Header.Get("Origin")
+		if (r.Method == http.MethodPost && origen != "http://"+puerto) ||
+			(r.Method != http.MethodPost && origen != "" && origen != "http://"+puerto) {
 			fallar(w, http.StatusForbidden, msj("accesoDenegado"))
 			return
 		}
 		h(w, r)
 	}
+}
+
+func seguridadHTTP(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; img-src 'self' https: data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' https:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("Referrer-Policy", "no-referrer")
+		w.Header().Set("X-Frame-Options", "DENY")
+		h.ServeHTTP(w, r)
+	})
 }
 
 func (a *App) rutas(mux *http.ServeMux) {

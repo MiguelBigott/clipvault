@@ -3,10 +3,14 @@ package main
 import (
 	"archive/zip"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -16,8 +20,8 @@ import (
 )
 
 const (
-	urlYtdlp  = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
-	urlFfmpeg = "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
+	apiYtdlp  = "https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest"
+	apiFfmpeg = "https://api.github.com/repos/yt-dlp/FFmpeg-Builds/releases/tags/latest"
 )
 
 type Componentes struct {
@@ -51,21 +55,29 @@ func NuevosComponentes(a *App) *Componentes {
 	return c
 }
 
-// carpeta es donde viven los componentes: "componentes" junto al .exe de la app
-// (C:\Program Files\ClipVault\componentes). El instalador los deja ahí.
+// carpeta es el directorio escribible del usuario. Los componentes incluidos con la app
+// permanecen en Program Files y se usan como respaldo.
 func (c *Componentes) carpeta() string {
-	ex, err := os.Executable()
-	if err != nil {
-		return filepath.Join(c.app.dataDir, "componentes")
-	}
-	return filepath.Join(filepath.Dir(ex), "componentes")
+	return filepath.Join(c.app.dataDir, "componentes")
 }
 
-// argsMotor indica al motor de descarga dónde está Deno (su motor de JavaScript),
-// que viene en la misma carpeta de componentes.
+func (c *Componentes) directorios() []string {
+	dirs := []string{c.carpeta()}
+	if ex, err := os.Executable(); err == nil {
+		instalados := filepath.Join(filepath.Dir(ex), "componentes")
+		if !strings.EqualFold(filepath.Clean(instalados), filepath.Clean(dirs[0])) {
+			dirs = append(dirs, instalados)
+		}
+	}
+	return dirs
+}
+
+// argsMotor indica al motor de descarga dónde está Deno.
 func (c *Componentes) argsMotor() []string {
-	if d := buscar("deno", c.carpeta()); d != "" {
-		return []string{"--js-runtimes", "deno:" + d}
+	for _, dir := range c.directorios() {
+		if d := buscar("deno", dir); d != "" {
+			return []string{"--js-runtimes", "deno:" + d}
+		}
 	}
 	return nil
 }
@@ -79,9 +91,15 @@ func buscar(nombre, dir string) string {
 }
 
 func (c *Componentes) Refrescar() {
-	dir := c.carpeta()
-	y := buscar("yt-dlp", dir)
-	f := buscar("ffmpeg", dir)
+	var y, f string
+	for _, dir := range c.directorios() {
+		if y == "" {
+			y = buscar("yt-dlp", dir)
+		}
+		if f == "" {
+			f = buscar("ffmpeg", dir)
+		}
+	}
 	ver := ""
 	if y != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -260,7 +278,7 @@ func (c *Componentes) instalar() error {
 	y, f := c.Rutas()
 	if y == "" {
 		c.avance("motor", 0)
-		if err := descargarArchivo(urlYtdlp, filepath.Join(dir, "yt-dlp.exe"), func(p float64) {
+		if err := descargarVerificado(apiYtdlp, "yt-dlp.exe", filepath.Join(dir, "yt-dlp.exe"), 50<<20, func(p float64) {
 			c.avance("motor", p)
 		}); err != nil {
 			return err
@@ -269,7 +287,7 @@ func (c *Componentes) instalar() error {
 	if f == "" {
 		zipPath := filepath.Join(dir, "ffmpeg.zip")
 		c.avance("ffmpeg", 0)
-		if err := descargarArchivo(urlFfmpeg, zipPath, func(p float64) {
+		if err := descargarVerificado(apiFfmpeg, "ffmpeg-master-latest-win64-gpl.zip", zipPath, 500<<20, func(p float64) {
 			c.avance("ffmpeg", p)
 		}); err != nil {
 			return err
@@ -284,52 +302,139 @@ func (c *Componentes) instalar() error {
 	return nil
 }
 
-func descargarArchivo(url, destino string, progreso func(float64)) error {
-	cli := &http.Client{Timeout: 30 * time.Minute}
-	resp, err := cli.Get(url)
+type escritorProgreso struct {
+	destino      io.Writer
+	total, leido int64
+	ultimo       time.Time
+	progreso     func(float64)
+}
+
+func (e *escritorProgreso) Write(datos []byte) (int, error) {
+	n, err := e.destino.Write(datos)
+	e.leido += int64(n)
+	if e.total > 0 && e.progreso != nil && time.Since(e.ultimo) >= 200*time.Millisecond {
+		e.progreso(float64(e.leido) / float64(e.total))
+		e.ultimo = time.Now()
+	}
+	return n, err
+}
+
+func descargarVerificado(apiURL, nombre, destino string, maxBytes int64, progreso func(float64)) error {
+	cli := &http.Client{
+		Timeout: 30 * time.Minute,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if req.URL.Scheme != "https" || len(via) >= 10 {
+				return errors.New("redirección de descarga no válida")
+			}
+			return nil
+		},
+	}
+	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("User-Agent", "ClipVault")
+	meta, err := cli.Do(req)
+	if err != nil {
+		return msj("sinConexionDescargas")
+	}
+	if meta.StatusCode != http.StatusOK {
+		meta.Body.Close()
+		return msj("servidorRespondio", "codigo", strconv.Itoa(meta.StatusCode))
+	}
+	var release struct {
+		Assets []struct {
+			Name   string `json:"name"`
+			URL    string `json:"browser_download_url"`
+			Digest string `json:"digest"`
+			Size   int64  `json:"size"`
+		} `json:"assets"`
+	}
+	decodeErr := json.NewDecoder(io.LimitReader(meta.Body, 2<<20)).Decode(&release)
+	meta.Body.Close()
+	if decodeErr != nil {
+		return decodeErr
+	}
+	var assetURL, expected string
+	var expectedSize int64
+	for _, asset := range release.Assets {
+		if asset.Name == nombre {
+			assetURL, expected, expectedSize = asset.URL, asset.Digest, asset.Size
+			break
+		}
+	}
+	asset, err := url.Parse(assetURL)
+	if err != nil || asset.Scheme != "https" || asset.Host != "github.com" ||
+		!strings.HasPrefix(expected, "sha256:") || len(expected) != len("sha256:")+64 ||
+		expectedSize <= 0 || expectedSize > maxBytes {
+		return errors.New("release sin checksum SHA-256 válido o fuera del tamaño permitido")
+	}
+	expected = strings.TrimPrefix(expected, "sha256:")
+	if _, err := hex.DecodeString(expected); err != nil {
+		return errors.New("checksum SHA-256 inválido")
+	}
+	downloadReq, err := http.NewRequest(http.MethodGet, assetURL, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := cli.Do(downloadReq)
 	if err != nil {
 		return msj("sinConexionDescargas")
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK || resp.Request.URL.Scheme != "https" {
 		return msj("servidorRespondio", "codigo", strconv.Itoa(resp.StatusCode))
 	}
-	tmp := destino + ".part"
-	out, err := os.Create(tmp)
+	if resp.ContentLength > maxBytes || (resp.ContentLength >= 0 && resp.ContentLength != expectedSize) {
+		return errors.New("tamaño de descarga inesperado")
+	}
+	if err := os.MkdirAll(filepath.Dir(destino), 0o700); err != nil {
+		return err
+	}
+	tmp, err := os.CreateTemp(filepath.Dir(destino), ".clipvault-*.part")
 	if err != nil {
 		return err
 	}
-	total := resp.ContentLength
-	var leido int64
-	buf := make([]byte, 256*1024)
-	ultimo := time.Now()
-	for {
-		n, rerr := resp.Body.Read(buf)
-		if n > 0 {
-			if _, werr := out.Write(buf[:n]); werr != nil {
-				out.Close()
-				return werr
-			}
-			leido += int64(n)
-			if total > 0 && time.Since(ultimo) > 200*time.Millisecond {
-				progreso(float64(leido) / float64(total))
-				ultimo = time.Now()
-			}
-		}
-		if rerr == io.EOF {
-			break
-		}
-		if rerr != nil {
-			out.Close()
-			return msj("descargaCortada")
+	tmpPath := tmp.Name()
+	defer os.Remove(tmpPath)
+	hash := sha256.New()
+	observador := &escritorProgreso{destino: io.MultiWriter(tmp, hash), total: expectedSize, ultimo: time.Now(), progreso: progreso}
+	total, copyErr := io.Copy(observador, io.LimitReader(resp.Body, maxBytes+1))
+	if copyErr == nil && total > maxBytes {
+		copyErr = errors.New("descarga supera el tamaño permitido")
+	}
+	if copyErr == nil && total != expectedSize {
+		copyErr = errors.New("descarga incompleta")
+	}
+	if copyErr == nil && !strings.EqualFold(hex.EncodeToString(hash.Sum(nil)), expected) {
+		copyErr = errors.New("el checksum SHA-256 no coincide")
+	}
+	if copyErr == nil {
+		copyErr = tmp.Sync()
+	}
+	closeErr := tmp.Close()
+	if copyErr == nil {
+		copyErr = closeErr
+	}
+	if copyErr != nil {
+		return copyErr
+	}
+	progreso(1)
+	backup := destino + ".previous"
+	_ = os.Remove(backup)
+	if _, err := os.Stat(destino); err == nil {
+		if err := os.Rename(destino, backup); err != nil {
+			return err
 		}
 	}
-	out.Close()
-	progreso(1)
-	_ = os.Remove(destino)
-	return os.Rename(tmp, destino)
+	if err := os.Rename(tmpPath, destino); err != nil {
+		_ = os.Rename(backup, destino)
+		return err
+	}
+	_ = os.Remove(backup)
+	return nil
 }
-
 func extraerFfmpeg(zipPath, dir string) error {
 	zr, err := zip.OpenReader(zipPath)
 	if err != nil {
@@ -341,6 +446,9 @@ func extraerFfmpeg(zipPath, dir string) error {
 		base := filepath.Base(f.Name)
 		if !strings.Contains(f.Name, "/bin/") || (base != "ffmpeg.exe" && base != "ffprobe.exe") {
 			continue
+		}
+		if f.UncompressedSize64 > 300<<20 {
+			return errors.New("ejecutable ffmpeg supera el tamaño permitido")
 		}
 		rc, err := f.Open()
 		if err != nil {
@@ -372,25 +480,15 @@ func (c *Componentes) ActualizarEnSegundoPlano() {
 	go func() {
 		antes := c.Estado().VersionYtdlp
 		y, _ := c.Rutas()
-		var err error
 		if y == "" {
-			err = msj("faltaMotor")
-		} else {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-			var out strings.Builder
-			cmd := comando(ctx, y, "-U")
-			cmd.Stdout, cmd.Stderr = &out, &out
-			err = cmd.Run()
-			cancel()
-			log.Println("yt-dlp -U:", out.String())
-			if err != nil {
-				// Algunas variantes de yt-dlp no se actualizan solas: bajamos el .exe oficial.
-				c.avance("reciente", 0)
-				err = descargarArchivo(urlYtdlp, y, func(p float64) {
-					c.avance("reciente", p)
-				})
-			}
+			c.terminar(msj("faltaMotor"), true)
+			return
 		}
+		destino := filepath.Join(c.carpeta(), "yt-dlp.exe")
+		c.avance("reciente", 0)
+		err := descargarVerificado(apiYtdlp, "yt-dlp.exe", destino, 50<<20, func(p float64) {
+			c.avance("reciente", p)
+		})
 		c.Refrescar()
 		if err != nil {
 			c.terminar(msj("motorFallo").conCausa(err), true)

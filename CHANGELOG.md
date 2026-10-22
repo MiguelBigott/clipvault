@@ -3,6 +3,11 @@
 Todas las versiones siguen [Versionado Semántico](https://semver.org/lang/es/). Cada una tiene su
 etiqueta `vX.Y.Z` y su página en [Releases](../../releases).
 
+## [1.3.2] - 2026-10-22
+
+### Seguridad
+- Endurece la API local, elimina la escritura de componentes en Program Files y verifica descargas con el SHA-256 publicado por GitHub.
+
 ## [1.3.1] - 2026-10-19
 
 ### Corregido
